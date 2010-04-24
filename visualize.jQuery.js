@@ -25,7 +25,9 @@ $.fn.visualize = function(options, container){
 			pieMargin: 20, //pie charts only - spacing around pie
 			pieLabelPos: 'inside',
 			lineWeight: 4, //for line and area - stroke weight
-			lineDots: 'double', //also available: 'single', false
+			lineDots: 'double', //also available: 'single', false (ignores lineMargin)
+			lineMargin: 0, //line charts only - space around lines
+			dotInteraction: false, // only used for lineDots != false -- triggers mouseover and mouseout on original table
 			dotInnerColor: "#ffffff", // only used for lineDots:'double'
 			barGroupMargin: 10,
 			barMargin: 1, //space around bars in bar chart (added to both sides of bar)
@@ -281,8 +283,82 @@ $.fn.visualize = function(options, container){
 						.css('margin-top', topOffset)
 						.addClass('label');
 				});
+				
+				
+				var interactionPointsByColor = {};
+				var interactionColor = 0;
+				
+				var triggerInteraction = function(overOut,cords) {
+					var selector = (o.parseDirection == 'x') ? 'tr:gt(0) th:eq('+cords[0]+')' : 'tr:eq(0) th:eq('+cords[0]+')' ;
+					var zLabel = self.find(selector).text();
+					selector = (o.parseDirection == 'x') ? 'tr:gt('+cords[0]+') td:eq('+cords[1]+')' : 'tr:eq(0) th:eq('+cords[0]+')' ;
+					var elem = self.find(selector);
+					var data = {
+						xLabel: xLabels[cords[1]],
+						yLabel: zLabel,
+						value: dataGroups[cords[0]].points[cords[1]],
+						x: cords[2],
+						y: cords[3]
+					}
+					elem.trigger('mouse'+overOut,data);
+					// console.log(inOut,elem,data);
+				};
 
-				var drawPoint = function (x,y,color,size) {
+				var over=false, last=false;
+				tracker.mousemove(function(e){
+					var x,y,x1,y1,data,point,selector,zLabel,elem,color,ev=e.originalEvent;
+					
+
+					x = ev.layerX || ev.offsetX || 0;
+					y = ev.layerY || ev.offsetY || 0;
+
+					// console.info(x,'||',y);
+					if(ctxI.getImageData) {
+						data = ctxI.getImageData(x, y,1,1).data;
+						color = ('0'+data[0].toString(16)).substr(-2)+('0'+data[1].toString(16)).substr(-2)+('0'+data[2].toString(16)).substr(-2);
+					
+						point = interactionPointsByColor['h'+color];
+						point = point && point.tableCords;
+					
+						if(point && data[3]>=20) { // validates alpha
+							x1 = interactionPointsByColor['h'+color].canvasCords[0];
+							y1 = interactionPointsByColor['h'+color].canvasCords[1] + zeroLoc;
+							if(x1+o.lineWeight >= x && x >= x1-o.lineWeight && y1+o.lineWeight >= y && y >= y1-o.lineWeight) { // validades coords, avoid points touching for triggering wrong color
+								over = point;
+							}
+						} else {
+							over = false;
+						}
+					} else {
+						// IE sux, so it gets square trigger areas and less performance
+						var found = false;
+						for(color in interactionPointsByColor) {
+							var current = interactionPointsByColor[color];
+							x1 = current.canvasCords[0];
+							y1 = current.canvasCords[1] + zeroLoc;
+							if(x1+o.lineWeight >= x && x >= x1-o.lineWeight && y1+o.lineWeight >= y && y >= y1-o.lineWeight) {
+								found = current.tableCords;
+								break;
+							}
+						}
+						over = point = found;
+					}
+					if(over != last) {
+						if(over) {
+							if(last) {
+								triggerInteraction('out',last.concat(x,y));
+							}
+							triggerInteraction('over',over.concat(x,y));
+							last = over;
+						}
+						if(last && !over) {
+							triggerInteraction('out',last.concat(x,y));
+							last=false;
+						}
+					}
+				});
+				
+				var drawPoint = function (ctx,x,y,color,size) {
 					ctx.moveTo(x,y);
 					ctx.beginPath();
 					ctx.arc(x,y,size/2,0,2*Math.PI,false);
@@ -291,18 +367,25 @@ $.fn.visualize = function(options, container){
 					ctx.fill();
 				}
 				var pointQueue = [];
-				var keyPoint = function(x,y,color) {
+				var keyPoint = function(x,y,color,myInfo) {
 					var size = o.lineWeight*Math.PI;
 					pointQueue.push(function() {
-						drawPoint(x,y,color,size);
+						drawPoint(ctx,x,y,color,size);
 						if(o.lineDots === 'double') {
-							drawPoint(x,y,o.dotInnerColor,size-o.lineWeight*Math.PI/2);
+							drawPoint(ctx,x,y,o.dotInnerColor,size-o.lineWeight*Math.PI/2);
+						}
+						if(o.dotInteraction) {
+							var interactionColorStr = ('0'+interactionColor.toString(16)).substr(-2)+'0000';
+							drawPoint(ctxI,x,y,'#'+interactionColorStr,size);
+							interactionColor += 10;
+							interactionPointsByColor['h'+interactionColorStr] = {tableCords:myInfo,canvasCords:[x,y]};
 						}
 					});
 				};
 
 				//start from the bottom left
 				ctx.translate(0,zeroLoc);
+				ctxI.translate(0,zeroLoc);
 				//iterate and draw
 				$.each(dataGroups,function(h){
 					ctx.beginPath();
@@ -310,12 +393,16 @@ $.fn.visualize = function(options, container){
 					ctx.lineJoin = 'round';
 					var points = this.points;
 					var integer = 0;
+					var myInfo = [0,0];
 					var color = this.color;
 					ctx.moveTo(0,-(points[0]*yScale));
-					keyPoint(0,-(points[0]*yScale),color);
-					$.each(points, function(){
+					if(o.lineDots) {
+						keyPoint(0,-(points[0]*yScale),color,myInfo);
+					}
+					$.each(points, function(g){
+						myInfo = [h,g];
 						if(o.lineDots) {
-							keyPoint(integer,-(this*yScale),color);
+							keyPoint(integer,-(this*yScale),color,myInfo);
 						}
 						ctx.lineTo(integer,-(this*yScale));
 						integer+=xInterval;
@@ -387,7 +474,7 @@ $.fn.visualize = function(options, container){
 				 * Write labels along the left of the chart.	Follows the same idea
 				 * as the bottom labels.
 				 */
-				leftLabels = horizontal ? xLabels : yLabels;
+				var leftLabels = horizontal ? xLabels : yLabels;
 				var liBottom = canvas.height() / (leftLabels.length - (horizontal ? 0 : 1));
 
 				var ylabelsUL = $('<ul class="visualize-labels-y"></ul>')
@@ -418,7 +505,7 @@ $.fn.visualize = function(options, container){
 						});
 						thisLi.css({'top': liBottom * i, 'min-height': liBottom});
 
-						r = label[0].getClientRects()[0];
+						var r = label[0].getClientRects()[0];
 						if (r.bottom - r.top == liBottom) {
 							/* This means we have only one line of text; hence
 							 * we can centre the text vertically by setting the line-height,
@@ -499,7 +586,23 @@ $.fn.visualize = function(options, container){
 				'height': o.height,
 				'width': o.width
 			});
-			
+		var canvasInteractionNode = document.createElement("canvas"); 
+		var tracker = $('<div/>') // IE needs another element not the canvas. The VML shapes prevent mousemove from triggering.
+			.css({
+				'height': o.height + 'px',
+				'width': o.width + 'px',
+				'position':'relative',
+				'z-index': 200
+			});
+		var canvasInteraction = $(canvasInteractionNode)
+			.attr({
+				'height': o.height,
+				'width': o.width
+			})
+			.css({
+				'visibility':'hidden'
+			});
+
 		//get title for chart
 		var title = o.title || self.find('caption').text();
 		
@@ -507,7 +610,9 @@ $.fn.visualize = function(options, container){
 		var canvasContain = (container || $('<div class="visualize" role="img" aria-label="Chart representing data from the table: '+ title +'" />'))
 			.height(o.height)
 			.width(o.width)
-			.append(canvas);
+			.append(canvasInteraction)
+			.append(canvas)
+			.append(tracker)
 
 		//scrape table (this should be cleaned up into an obj)
 		var tableData = scrapeTable();
@@ -547,11 +652,15 @@ $.fn.visualize = function(options, container){
 		//append new canvas to page
 		
 		if(!container){canvasContain.insertAfter(this); }
-		if( typeof(G_vmlCanvasManager) != 'undefined' ){ G_vmlCanvasManager.initElement(canvas[0]); }	
+		if( typeof(G_vmlCanvasManager) != 'undefined' ){
+			G_vmlCanvasManager.initElement(canvas[0]);
+			G_vmlCanvasManager.initElement(canvasInteraction[0]);
+		}	
 		
 		//set up the drawing board	
 		var ctx = canvas[0].getContext('2d');
-		
+		var ctxI = canvasInteraction[0].getContext('2d');
+
 		//create chart
 		createChart[o.type]();
 		
