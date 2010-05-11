@@ -296,6 +296,7 @@ $.fn.visualize = function(options, container){
 					ctx.fill();
 				}
 				var pointQueue = [];
+				var counterPoints = 0;
 				var keyPoint = function(x,y,color,myInfo) {
 					var size = o.lineWeight*Math.PI;
 					pointQueue.push(function() {
@@ -304,6 +305,7 @@ $.fn.visualize = function(options, container){
 							drawPoint(ctx,x,y,o.dotInnerColor,size-o.lineWeight*Math.PI/2);
 						}
 						if(o.interaction) {
+							counterPoints++;
 							interactionPoints.push({tableCords:myInfo,canvasCords:[x,y]});
 						}
 					});
@@ -321,9 +323,6 @@ $.fn.visualize = function(options, container){
 					var myInfo = [0,0];
 					var color = this.color;
 					ctx.moveTo(0,-(points[0]*yScale));
-					if(o.lineDots) {
-						keyPoint(0,-(points[0]*yScale),color,myInfo);
-					}
 					$.each(points, function(g){
 						myInfo = [h,g];
 						if(o.lineDots) {
@@ -595,7 +594,7 @@ $.fn.visualize = function(options, container){
 			tracker.mousemove(function(e){
 				var x,y,x1,y1,data,point,dist,i,selector,zLabel,elem,color,ev=e.originalEvent;
 
-
+				// get mouse position relative to the tracker/canvas
 				x = ev.layerX || ev.offsetX || 0;
 				y = ev.layerY || ev.offsetY || 0;
 
@@ -611,7 +610,6 @@ $.fn.visualize = function(options, container){
 						minDist = dist;
 					}
 				}
-				// console.log(minDist);
 				over = point = found;
 
 				if(over != last) {
