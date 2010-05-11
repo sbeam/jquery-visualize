@@ -27,11 +27,11 @@ $.fn.visualize = function(options, container){
 			lineWeight: 4, //for line and area - stroke weight
 			lineDots: 'double', //also available: 'single', false (ignores lineMargin)
 			lineMargin: 0, //line charts only - space around lines
-			dotInteraction: false, // only used for lineDots != false -- triggers mouseover and mouseout on original table
 			dotInnerColor: "#ffffff", // only used for lineDots:'double'
 			barGroupMargin: 10,
 			barMargin: 1, //space around bars in bar chart (added to both sides of bar)
-			yLabelInterval: 30 //distance between y labels
+			yLabelInterval: 30, //distance between y labels
+			interaction: false // only used for lineDots != false -- triggers mouseover and mouseout on original table
 		},options);
 		
 		//reset width, height to numbers
@@ -228,11 +228,14 @@ $.fn.visualize = function(options, container){
 			        		.css({left: labelx, top: labely})
 			        		.append(labeltext);	
 			        labeltext
-			        	.css('font-size', radius / 8)		
+			        	.css('font-size', radius / 8)
 			        	.css('margin-'+leftRight, -labeltext.width()/2)
 			        	.css('margin-'+topBottom, -labeltext.outerHeight()/2);
 			        	
 			        if(dataGroups[i].textColor){ labeltext.css('color', dataGroups[i].textColor); }	
+					if(o.interaction) {
+						interactionPoints.push({tableCords:[i,0],canvasCords:[labelx,labely]})
+					}
 			      	counter+=fraction;
 				});
 			},
@@ -284,97 +287,6 @@ $.fn.visualize = function(options, container){
 						.addClass('label');
 				});
 				
-				
-				var interactionPointsByColor = {};
-				var interactionPoints = [];
-				var interactionColor = 0;
-				
-				var triggerInteraction = function(overOut,cords) {
-					var selector = (o.parseDirection == 'x') ? 'tr:gt(0) th:eq('+cords[0]+')' : 'tr:eq(0) th:eq('+cords[0]+')' ;
-					var zLabel = self.find(selector).text();
-					selector = (o.parseDirection == 'x') ? 'tr:gt('+cords[0]+') td:eq('+cords[1]+')' : 'tr:eq(0) th:eq('+cords[0]+')' ;
-					var elem = self.find(selector);
-					var data = {
-						xLabel: xLabels[cords[1]],
-						yLabel: zLabel,
-						value: dataGroups[cords[0]].points[cords[1]],
-						x: cords[2],
-						y: cords[3]
-					}
-					elem.trigger('mouse'+overOut,data);
-					// console.log(inOut,elem,data);
-				};
-
-				var over=false, last=false;
-				tracker.mousemove(function(e){
-					var x,y,x1,y1,data,point,dist,i,selector,zLabel,elem,color,ev=e.originalEvent;
-					
-
-					x = ev.layerX || ev.offsetX || 0;
-					y = ev.layerY || ev.offsetY || 0;
-
-					// console.info(x,'||',y);
-					// if(ctxI.getImageData) {
-					// 	data = ctxI.getImageData(x, y,1,1).data;
-					// 	color = ('0'+data[0].toString(16)).substr(-2)+('0'+data[1].toString(16)).substr(-2)+('0'+data[2].toString(16)).substr(-2);
-					// 
-					// 	point = interactionPointsByColor['h'+color];
-					// 	point = point && point.tableCords;
-					// 
-					// 	if(point && data[3]>=20) { // validates alpha
-					// 		x1 = interactionPointsByColor['h'+color].canvasCords[0];
-					// 		y1 = interactionPointsByColor['h'+color].canvasCords[1] + zeroLoc;
-					// 		if(x1+o.lineWeight >= x && x >= x1-o.lineWeight && y1+o.lineWeight >= y && y >= y1-o.lineWeight) { // validades coords, avoid points touching for triggering wrong color
-					// 			over = point;
-					// 		}
-					// 	} else {
-					// 		over = false;
-					// 	}
-					// } else {
-					// 	// IE sux, so it gets square trigger areas and less performance
-					// 	var found = false;
-					// 	for(color in interactionPointsByColor) {
-					// 		var current = interactionPointsByColor[color];
-					// 		x1 = current.canvasCords[0];
-					// 		y1 = current.canvasCords[1] + zeroLoc;
-					// 		if(x1+o.lineWeight >= x && x >= x1-o.lineWeight && y1+o.lineWeight >= y && y >= y1-o.lineWeight) {
-					// 			found = current.tableCords;
-					// 			break;
-					// 		}
-					// 	}
-					// 	over = point = found;
-					// }
-					
-					found = false;
-					minDist = 100000;
-					for(i=0;i<interactionPoints.length;i+=1) {
-						var current = interactionPoints[i];
-						x1 = current.canvasCords[0];
-						y1 = current.canvasCords[1] + zeroLoc;
-						dist = Math.sqrt( (x1 - x)*(x1 - x) + (y1 - y)*(y1 - y) );
-						if(dist < minDist) {
-							found = current.tableCords;
-							minDist = dist;
-						}
-					}
-					// console.log(minDist);
-					over = point = found;
-					
-					if(over != last) {
-						if(over) {
-							if(last) {
-								triggerInteraction('out',last.concat(x,y));
-							}
-							triggerInteraction('over',over.concat(x,y));
-							last = over;
-						}
-						if(last && !over) {
-							triggerInteraction('out',last.concat(x,y));
-							last=false;
-						}
-					}
-				});
-				
 				var drawPoint = function (ctx,x,y,color,size) {
 					ctx.moveTo(x,y);
 					ctx.beginPath();
@@ -391,11 +303,7 @@ $.fn.visualize = function(options, container){
 						if(o.lineDots === 'double') {
 							drawPoint(ctx,x,y,o.dotInnerColor,size-o.lineWeight*Math.PI/2);
 						}
-						if(o.dotInteraction) {
-							var interactionColorStr = ('0'+interactionColor.toString(16)).substr(-2)+'0000';
-							drawPoint(ctxI,x,y,'#'+interactionColorStr,size);
-							interactionColor += 10;
-							interactionPointsByColor['h'+interactionColorStr] = {tableCords:myInfo,canvasCords:[x,y]};
+						if(o.interaction) {
 							interactionPoints.push({tableCords:myInfo,canvasCords:[x,y]});
 						}
 					});
@@ -403,7 +311,6 @@ $.fn.visualize = function(options, container){
 
 				//start from the bottom left
 				ctx.translate(0,zeroLoc);
-				ctxI.translate(0,zeroLoc);
 				//iterate and draw
 				$.each(dataGroups,function(h){
 					ctx.beginPath();
@@ -604,23 +511,7 @@ $.fn.visualize = function(options, container){
 				'height': o.height,
 				'width': o.width
 			});
-		var canvasInteractionNode = document.createElement("canvas"); 
-		var tracker = $('<div/>') // IE needs another element not the canvas. The VML shapes prevent mousemove from triggering.
-			.css({
-				'height': o.height + 'px',
-				'width': o.width + 'px',
-				'position':'relative',
-				'z-index': 200
-			});
-		var canvasInteraction = $(canvasInteractionNode)
-			.attr({
-				'height': o.height,
-				'width': o.width
-			})
-			.css({
-				'visibility':'hidden'
-			});
-
+		
 		//get title for chart
 		var title = o.title || self.find('caption').text();
 		
@@ -628,9 +519,8 @@ $.fn.visualize = function(options, container){
 		var canvasContain = (container || $('<div class="visualize" role="img" aria-label="Chart representing data from the table: '+ title +'" />'))
 			.height(o.height)
 			.width(o.width)
-			.append(canvasInteraction)
-			.append(canvas)
-			.append(tracker)
+			.append(canvas);
+
 
 		//scrape table (this should be cleaned up into an obj)
 		var tableData = scrapeTable();
@@ -667,17 +557,88 @@ $.fn.visualize = function(options, container){
 			newKey.appendTo(infoContain);
 		};		
 		
-		//append new canvas to page
+		// init interaction
+		if(o.interaction) {
+			// sets the canvas to track interaction
+			// IE needs one div on top of the canvas since the VML shapes prevent mousemove from triggering correctly.
+			// Pie charts needs tracker because labels goes on top of the canvas and also messes up with mousemove
+			var tracker = $('<div class="visualize-interaction-tracker"/>')
+				.css({
+					'height': o.height + 'px',
+					'width': o.width + 'px',
+					'position':'relative',
+					'z-index': 200
+				})
+				.appendTo(canvasContain);
+			var interactionPoints = [];
+			var triggerInteraction = function(overOut,cords) {
+				var selector = (o.parseDirection == 'x') ? 'tr:gt(0) th:eq('+cords[0]+')' : 'tr:eq(0) th:eq('+cords[0]+')' ;
+				var zLabel = self.find(selector).text();
+				if(o.type == 'pie') {
+					selector = (o.parseDirection == 'x') ? 'tr:eq('+(cords[0]+1)+')' : 'tr th:eq('+cords[0]+')' ;
+				} else {
+					selector = (o.parseDirection == 'x') ? 'tr:gt('+cords[0]+') td:eq('+cords[1]+')' : 'tr:eq(0) th:eq('+cords[0]+')' ;
+				}
+				var elem = self.find(selector);
+				var data = {
+					xLabel: xLabels[cords[1]],
+					yLabel: zLabel,
+					value: dataGroups[cords[0]].points[cords[1]],
+					x: cords[2],
+					y: cords[3]
+				}
+				elem.trigger('mouse'+overOut,data);
+				// console.log(inOut,elem,data);
+			};
+
+			var over=false, last=false, started=false;
+			tracker.mousemove(function(e){
+				var x,y,x1,y1,data,point,dist,i,selector,zLabel,elem,color,ev=e.originalEvent;
+
+
+				x = ev.layerX || ev.offsetX || 0;
+				y = ev.layerY || ev.offsetY || 0;
+
+				found = false;
+				minDist = started?30000:(o.type=='pie'?(Math.round(canvas.height()/2)-o.pieMargin)/3:o.lineWeight*3);
+				for(i=0;i<interactionPoints.length;i+=1) {
+					var current = interactionPoints[i];
+					x1 = current.canvasCords[0];
+					y1 = current.canvasCords[1] + (o.type=="pie"?0:zeroLoc);
+					dist = Math.sqrt( (x1 - x)*(x1 - x) + (y1 - y)*(y1 - y) );
+					if(dist < minDist) {
+						found = current.tableCords;
+						minDist = dist;
+					}
+				}
+				// console.log(minDist);
+				over = point = found;
+
+				if(over != last) {
+					if(over) {
+						if(last) {
+							triggerInteraction('out',last.concat(x,y));
+						}
+						triggerInteraction('over',over.concat(x,y));
+						last = over;
+					}
+					if(last && !over) {
+						triggerInteraction('out',last.concat(x,y));
+						last=false;
+					}
+					started=true;
+				}
+			});
+		}
 		
+		//append new canvas to page
 		if(!container){canvasContain.insertAfter(this); }
 		if( typeof(G_vmlCanvasManager) != 'undefined' ){
 			G_vmlCanvasManager.initElement(canvas[0]);
-			G_vmlCanvasManager.initElement(canvasInteraction[0]);
-		}	
+		}
 		
 		//set up the drawing board	
 		var ctx = canvas[0].getContext('2d');
-		var ctxI = canvasInteraction[0].getContext('2d');
 
 		//create chart
 		createChart[o.type]();
