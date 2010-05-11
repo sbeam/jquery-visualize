@@ -286,6 +286,7 @@ $.fn.visualize = function(options, container){
 				
 				
 				var interactionPointsByColor = {};
+				var interactionPoints = [];
 				var interactionColor = 0;
 				
 				var triggerInteraction = function(overOut,cords) {
@@ -306,43 +307,59 @@ $.fn.visualize = function(options, container){
 
 				var over=false, last=false;
 				tracker.mousemove(function(e){
-					var x,y,x1,y1,data,point,selector,zLabel,elem,color,ev=e.originalEvent;
+					var x,y,x1,y1,data,point,dist,i,selector,zLabel,elem,color,ev=e.originalEvent;
 					
 
 					x = ev.layerX || ev.offsetX || 0;
 					y = ev.layerY || ev.offsetY || 0;
 
 					// console.info(x,'||',y);
-					if(ctxI.getImageData) {
-						data = ctxI.getImageData(x, y,1,1).data;
-						color = ('0'+data[0].toString(16)).substr(-2)+('0'+data[1].toString(16)).substr(-2)+('0'+data[2].toString(16)).substr(-2);
+					// if(ctxI.getImageData) {
+					// 	data = ctxI.getImageData(x, y,1,1).data;
+					// 	color = ('0'+data[0].toString(16)).substr(-2)+('0'+data[1].toString(16)).substr(-2)+('0'+data[2].toString(16)).substr(-2);
+					// 
+					// 	point = interactionPointsByColor['h'+color];
+					// 	point = point && point.tableCords;
+					// 
+					// 	if(point && data[3]>=20) { // validates alpha
+					// 		x1 = interactionPointsByColor['h'+color].canvasCords[0];
+					// 		y1 = interactionPointsByColor['h'+color].canvasCords[1] + zeroLoc;
+					// 		if(x1+o.lineWeight >= x && x >= x1-o.lineWeight && y1+o.lineWeight >= y && y >= y1-o.lineWeight) { // validades coords, avoid points touching for triggering wrong color
+					// 			over = point;
+					// 		}
+					// 	} else {
+					// 		over = false;
+					// 	}
+					// } else {
+					// 	// IE sux, so it gets square trigger areas and less performance
+					// 	var found = false;
+					// 	for(color in interactionPointsByColor) {
+					// 		var current = interactionPointsByColor[color];
+					// 		x1 = current.canvasCords[0];
+					// 		y1 = current.canvasCords[1] + zeroLoc;
+					// 		if(x1+o.lineWeight >= x && x >= x1-o.lineWeight && y1+o.lineWeight >= y && y >= y1-o.lineWeight) {
+					// 			found = current.tableCords;
+					// 			break;
+					// 		}
+					// 	}
+					// 	over = point = found;
+					// }
 					
-						point = interactionPointsByColor['h'+color];
-						point = point && point.tableCords;
-					
-						if(point && data[3]>=20) { // validates alpha
-							x1 = interactionPointsByColor['h'+color].canvasCords[0];
-							y1 = interactionPointsByColor['h'+color].canvasCords[1] + zeroLoc;
-							if(x1+o.lineWeight >= x && x >= x1-o.lineWeight && y1+o.lineWeight >= y && y >= y1-o.lineWeight) { // validades coords, avoid points touching for triggering wrong color
-								over = point;
-							}
-						} else {
-							over = false;
+					found = false;
+					minDist = 100000;
+					for(i=0;i<interactionPoints.length;i+=1) {
+						var current = interactionPoints[i];
+						x1 = current.canvasCords[0];
+						y1 = current.canvasCords[1] + zeroLoc;
+						dist = Math.sqrt( (x1 - x)*(x1 - x) + (y1 - y)*(y1 - y) );
+						if(dist < minDist) {
+							found = current.tableCords;
+							minDist = dist;
 						}
-					} else {
-						// IE sux, so it gets square trigger areas and less performance
-						var found = false;
-						for(color in interactionPointsByColor) {
-							var current = interactionPointsByColor[color];
-							x1 = current.canvasCords[0];
-							y1 = current.canvasCords[1] + zeroLoc;
-							if(x1+o.lineWeight >= x && x >= x1-o.lineWeight && y1+o.lineWeight >= y && y >= y1-o.lineWeight) {
-								found = current.tableCords;
-								break;
-							}
-						}
-						over = point = found;
 					}
+					// console.log(minDist);
+					over = point = found;
+					
 					if(over != last) {
 						if(over) {
 							if(last) {
@@ -379,6 +396,7 @@ $.fn.visualize = function(options, container){
 							drawPoint(ctxI,x,y,'#'+interactionColorStr,size);
 							interactionColor += 10;
 							interactionPointsByColor['h'+interactionColorStr] = {tableCords:myInfo,canvasCords:[x,y]};
+							interactionPoints.push({tableCords:myInfo,canvasCords:[x,y]});
 						}
 					});
 				};
