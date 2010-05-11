@@ -579,10 +579,16 @@ $.fn.visualize = function(options, container){
 					selector = (o.parseDirection == 'x') ? 'tr:gt('+cords[0]+') td:eq('+cords[1]+')' : 'tr:eq(0) th:eq('+cords[0]+')' ;
 				}
 				var elem = self.find(selector);
+				var value = 0;
+				if(o.type == 'pie') {
+					value = memberTotals[cords[0]] / dataSum * 100;
+				} else {
+					value = dataGroups[cords[0]].points[cords[1]];
+				}
 				var data = {
 					xLabel: xLabels[cords[1]],
 					yLabel: zLabel,
-					value: dataGroups[cords[0]].points[cords[1]],
+					value: value,
 					x: cords[2],
 					y: cords[3]
 				}
