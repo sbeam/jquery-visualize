@@ -369,6 +369,7 @@ $.fn.visualize = function(options, container){
 							ctx.globalAlpha = 1.0;
 						}
 						else {ctx.closePath();}
+						self.trigger('beforeDrawPoints',pointQueue);
 						$.each(pointQueue,function(){
 							pointQueue.shift().call();
 						});
@@ -616,7 +617,7 @@ $.fn.visualize = function(options, container){
 				.appendTo(canvasContain);
 			var interactionPoints = [];
 			var triggerInteraction = function(overOut,cords) {
-				var selector = (o.parseDirection == 'x') ? 'tbody tr th:eq('+cords[0]+')' : 'thead tr:eq(0) th:eq('+cords[0]+')' ;
+				var selector = (o.parseDirection == 'x') ? 'tbody tr th:first-child:eq('+cords[0]+')' : 'thead tr:eq(0) th:eq('+cords[0]+')' ;
 				var zLabel = self.find(selector).text();
 				if(o.type == 'pie') {
 					selector = (o.parseDirection == 'x') ? 'tbody tr:eq('+(cords[0])+')' : 'tbody tr td:eq('+cords[0]+')' ;
