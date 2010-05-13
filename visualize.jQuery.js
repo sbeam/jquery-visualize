@@ -378,169 +378,175 @@ $.fn.visualize = function(options, container){
 		
 		})();
 		
-		//function to create a chart
-		var createChart = {
-			pie: function(){
-				charts.pie.setup();
+		charts.area = {
+			setup: function() {
+				charts.line.setup(true);
 			},
-			
-			line: function(area){
-				charts.line.setup(area);
-			},
-			
-			area: function(){
-				createChart.line(true);
-			},
-			
-			bar: function(){
-				/**
-				 * We can draw horizontal or vertical bars depending on the
-				 * value of the 'barDirection' option (which may be 'vertical' or
-				 * 'horizontal').
-				 */
+			draw: charts.line.draw
+		};
+		
+		(function(){
 
-				var horizontal = (o.barDirection == 'horizontal');
+			var horizontal,bottomLabels;
 
-				canvasContain.addClass('visualize-bar');
+			charts.bar = {
+				setup:function(){
+					/**
+					 * We can draw horizontal or vertical bars depending on the
+					 * value of the 'barDirection' option (which may be 'vertical' or
+					 * 'horizontal').
+					 */
 
-				/**
-				 * Write labels along the bottom of the chart.	If we're drawing
-				 * horizontal bars, these will be the yLabels, otherwise they
-				 * will be the xLabels.	The positioning also varies slightly:
-				 * yLabels are values, hence they will span the whole width of
-				 * the canvas, whereas xLabels are supposed to line up with the
-				 * bars.
-				 */
-				var bottomLabels = horizontal ? yLabels : xLabels;
+					horizontal = (o.barDirection == 'horizontal');
 
-				var xInterval = canvas.width() / (bottomLabels.length - (horizontal ? 1 : 0));
+					canvasContain.addClass('visualize-bar');
 
-				var xlabelsUL = $('<ul class="visualize-labels-x"></ul>')
-					.width(canvas.width())
-					.height(canvas.height())
-					.insertBefore(canvas);
+					/**
+					 * Write labels along the bottom of the chart.	If we're drawing
+					 * horizontal bars, these will be the yLabels, otherwise they
+					 * will be the xLabels.	The positioning also varies slightly:
+					 * yLabels are values, hence they will span the whole width of
+					 * the canvas, whereas xLabels are supposed to line up with the
+					 * bars.
+					 */
+					bottomLabels = horizontal ? yLabels : xLabels;
 
-				$.each(bottomLabels, function(i){
-					var thisLi = $('<li><span class="label">'+this+'</span></li>')
-						.prepend('<span class="line" />')
-						.css('left', xInterval * i)
-						.width(xInterval)
-						.appendTo(xlabelsUL);
+					var xInterval = canvas.width() / (bottomLabels.length - (horizontal ? 1 : 0));
 
-					if (horizontal)	{
-						var label = thisLi.find('span.label');
-						label.css("margin-left", -label.width() / 2);
-					}
-				});
+					var xlabelsUL = $('<ul class="visualize-labels-x"></ul>')
+						.width(canvas.width())
+						.height(canvas.height())
+						.insertBefore(canvas);
 
-				/**
-				 * Write labels along the left of the chart.	Follows the same idea
-				 * as the bottom labels.
-				 */
-				var leftLabels = horizontal ? xLabels : yLabels;
-				var liBottom = canvas.height() / (leftLabels.length - (horizontal ? 0 : 1));
+					$.each(bottomLabels, function(i){
+						var thisLi = $('<li><span class="label">'+this+'</span></li>')
+							.prepend('<span class="line" />')
+							.css('left', xInterval * i)
+							.width(xInterval)
+							.appendTo(xlabelsUL);
 
-				var ylabelsUL = $('<ul class="visualize-labels-y"></ul>')
-					.width(canvas.width())
-					.height(canvas.height())
-					.insertBefore(canvas);
+						if (horizontal)	{
+							var label = thisLi.find('span.label');
+							label.css("margin-left", -label.width() / 2);
+						}
+					});
 
-				$.each(leftLabels, function(i){
-					var thisLi = $('<li><span>'+this+'</span></li>').prependTo(ylabelsUL);
+					/**
+					 * Write labels along the left of the chart.	Follows the same idea
+					 * as the bottom labels.
+					 */
+					var leftLabels = horizontal ? xLabels : yLabels;
+					var liBottom = canvas.height() / (leftLabels.length - (horizontal ? 0 : 1));
 
-					var label = thisLi.find('span:not(.line)').addClass('label');
+					var ylabelsUL = $('<ul class="visualize-labels-y"></ul>')
+						.width(canvas.width())
+						.height(canvas.height())
+						.insertBefore(canvas);
 
-					if (horizontal) {
-						/**
-						 * For left labels, we want to vertically align the text
-						 * to the middle of its container, but we don't know how
-						 * many lines of text we will have, since the labels could
-						 * be very long.
-						 *
-						 * So we set a min-height of liBottom, and a max-height
-						 * of liBottom + 1, so we can then check the label's actual
-						 * height to determine if it spans one line or more lines.
-						 */
-						label.css({
-							'min-height': liBottom,
-							'max-height': liBottom + 1,
-							'vertical-align': 'middle'
-						});
-						thisLi.css({'top': liBottom * i, 'min-height': liBottom});
+					$.each(leftLabels, function(i){
+						var thisLi = $('<li><span>'+this+'</span></li>').prependTo(ylabelsUL);
 
-						var r = label[0].getClientRects()[0];
-						if (r.bottom - r.top == liBottom) {
-							/* This means we have only one line of text; hence
-							 * we can centre the text vertically by setting the line-height,
-							 * as described at:
-							 *   http://www.ampsoft.net/webdesign-l/vertical-aligned-nav-list.html
+						var label = thisLi.find('span:not(.line)').addClass('label');
+
+						if (horizontal) {
+							/**
+							 * For left labels, we want to vertically align the text
+							 * to the middle of its container, but we don't know how
+							 * many lines of text we will have, since the labels could
+							 * be very long.
 							 *
-							 * (Although firefox has .height on the rectangle, IE doesn't,
-							 * so we use r.bottom - r.top rather than r.height.)
+							 * So we set a min-height of liBottom, and a max-height
+							 * of liBottom + 1, so we can then check the label's actual
+							 * height to determine if it spans one line or more lines.
 							 */
-							label.css('line-height', parseInt(liBottom) + 'px');
+							label.css({
+								'min-height': liBottom,
+								'max-height': liBottom + 1,
+								'vertical-align': 'middle'
+							});
+							thisLi.css({'top': liBottom * i, 'min-height': liBottom});
+
+							var r = label[0].getClientRects()[0];
+							if (r.bottom - r.top == liBottom) {
+								/* This means we have only one line of text; hence
+								 * we can centre the text vertically by setting the line-height,
+								 * as described at:
+								 *   http://www.ampsoft.net/webdesign-l/vertical-aligned-nav-list.html
+								 *
+								 * (Although firefox has .height on the rectangle, IE doesn't,
+								 * so we use r.bottom - r.top rather than r.height.)
+								 */
+								label.css('line-height', parseInt(liBottom) + 'px');
+							}
+							else {
+								/*
+								 * If there is more than one line of text, then we shouldn't
+								 * touch the line height, but we should make sure the text
+								 * doesn't overflow the container.
+								 */
+								label.css("overflow", "hidden");
+							}
 						}
 						else {
-							/*
-							 * If there is more than one line of text, then we shouldn't
-							 * touch the line height, but we should make sure the text
-							 * doesn't overflow the container.
-							 */
-							label.css("overflow", "hidden");
+							thisLi.css('bottom', liBottom * i).prepend('<span class="line" />');
+							label.css('margin-top', -label.height() / 2)
 						}
+					});
+
+					charts.bar.draw();
+
+				},
+
+				draw: function() {
+					// Draw bars
+
+					if (horizontal) {
+						// for horizontal, keep the same code, but rotate everything 90 degrees
+						// clockwise.
+						ctx.rotate(Math.PI / 2);
 					}
 					else {
-						thisLi.css('bottom', liBottom * i).prepend('<span class="line" />');
-						label.css('margin-top', -label.height() / 2)
+						// for vertical, translate to the top left corner.
+						ctx.translate(0, zeroLoc);
 					}
-				});
 
-				// Draw bars
+					// Don't attempt to draw anything if all the values are zero,
+					// otherwise we will get weird exceptions from the canvas methods.
+					if (totalYRange <= 0)
+						return;
 
-				if (horizontal) {
-					// for horizontal, keep the same code, but rotate everything 90 degrees
-					// clockwise.
-					ctx.rotate(Math.PI / 2);
-				}
-				else {
-					// for vertical, translate to the top left corner.
-					ctx.translate(0, zeroLoc);
-				}
+					var yScale = (horizontal ? canvas.width() : canvas.height()) / totalYRange;
+					var barWidth = horizontal ? (canvas.height() / xLabels.length) : (canvas.width() / (bottomLabels.length));
+					var linewidth = (barWidth - o.barGroupMargin*2) / dataGroups.length;
 
-				// Don't attempt to draw anything if all the values are zero,
-				// otherwise we will get weird exceptions from the canvas methods.
-				if (totalYRange <= 0)
-					return;
+					for(var h=0; h<dataGroups.length; h++){
+						ctx.beginPath();
 
-				var yScale = (horizontal ? canvas.width() : canvas.height()) / totalYRange;
-				var barWidth = horizontal ? (canvas.height() / xLabels.length) : (canvas.width() / (bottomLabels.length));
-				var linewidth = (barWidth - o.barGroupMargin*2) / dataGroups.length;
+						var strokeWidth = linewidth - (o.barMargin*2);
+						ctx.lineWidth = strokeWidth;
+						var points = dataGroups[h].points;
+						var integer = 0;
+						for(var i=0; i<points.length; i++){
+							// If the last value is zero, IE will go nuts and not draw anything,
+							// so don't try to draw zero values at all.
+							if (points[i] != 0) {
+								var xVal = (integer-o.barGroupMargin)+(h*linewidth)+linewidth/2;
+								xVal += o.barGroupMargin*2;
 
-				for(var h=0; h<dataGroups.length; h++){
-					ctx.beginPath();
-
-					var strokeWidth = linewidth - (o.barMargin*2);
-					ctx.lineWidth = strokeWidth;
-					var points = dataGroups[h].points;
-					var integer = 0;
-					for(var i=0; i<points.length; i++){
-						// If the last value is zero, IE will go nuts and not draw anything,
-						// so don't try to draw zero values at all.
-						if (points[i] != 0) {
-							var xVal = (integer-o.barGroupMargin)+(h*linewidth)+linewidth/2;
-							xVal += o.barGroupMargin*2;
-
-							ctx.moveTo(xVal, 0);
-							ctx.lineTo(xVal, Math.round(-points[i]*yScale));
-                        }
-						integer+=barWidth;
+								ctx.moveTo(xVal, 0);
+								ctx.lineTo(xVal, Math.round(-points[i]*yScale));
+	                        }
+							integer+=barWidth;
+						}
+						ctx.strokeStyle = dataGroups[h].color;
+						ctx.stroke();
+						ctx.closePath();
 					}
-					ctx.strokeStyle = dataGroups[h].color;
-					ctx.stroke();
-					ctx.closePath();
+
 				}
-			}
-		};
+			};
+			
+		})();
 	
 		//create new canvas, set w&h attrs (not inline styles)
 		var canvasNode = document.createElement("canvas"); 
@@ -637,7 +643,7 @@ $.fn.visualize = function(options, container){
 
 			var over=false, last=false, started=false;
 			tracker.mousemove(function(e){
-				var x,y,x1,y1,data,point,dist,i,selector,zLabel,elem,color,ev=e.originalEvent;
+				var x,y,x1,y1,data,point,dist,i,current,selector,zLabel,elem,color,minDist,found,ev=e.originalEvent;
 
 				// get mouse position relative to the tracker/canvas
 				x = ev.layerX || ev.offsetX || 0;
@@ -646,7 +652,7 @@ $.fn.visualize = function(options, container){
 				found = false;
 				minDist = started?30000:(o.type=='pie'?(Math.round(canvas.height()/2)-o.pieMargin)/3:o.lineWeight*4);
 				for(i=0;i<interactionPoints.length;i+=1) {
-					var current = interactionPoints[i];
+					current = interactionPoints[i];
 					x1 = current.canvasCords[0];
 					y1 = current.canvasCords[1] + (o.type=="pie"?0:zeroLoc);
 					dist = Math.sqrt( (x1 - x)*(x1 - x) + (y1 - y)*(y1 - y) );
@@ -684,7 +690,7 @@ $.fn.visualize = function(options, container){
 		var ctx = canvas[0].getContext('2d');
 
 		//create chart
-		createChart[o.type]();
+		charts[o.type].setup();
 		
 		//clean up some doubled lines that sit on top of canvas borders (done via JS due to IE)
 		$('.visualize-line li:first-child span.line, .visualize-line li:last-child span.line, .visualize-area li:first-child span.line, .visualize-area li:last-child span.line, .visualize-bar li:first-child span.line,.visualize-bar .visualize-labels-y li:last-child span.line').css('border','none');
