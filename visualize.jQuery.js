@@ -309,7 +309,7 @@ $.fn.visualize = function(options, container){
 					ctx.lineWidth = o.lineWeight;
 					ctx.lineJoin = 'round';
 					var points = this.points;
-					var integer = 0;
+					var integer = 0; // the current offset
 					var color = this.color;
 					ctx.moveTo(0,-(points[0]*yScale));
 					keyPoint(0,-(points[0]*yScale),color);
@@ -323,7 +323,9 @@ $.fn.visualize = function(options, container){
 					ctx.strokeStyle = color;
 					ctx.stroke();
 					if(area){
-						ctx.lineTo(integer,0);
+						// integer can be infinite if the xInterval is infinite (i.e. there's only one entry)
+						if (isFinite(integer))
+							ctx.lineTo(integer,0);
 						ctx.lineTo(0,0);
 						ctx.closePath();
 						ctx.fillStyle = color;
