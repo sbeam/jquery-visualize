@@ -54,8 +54,12 @@ $.fn.visualize = function(options, container){
 							dataGroups[i].points = [];
 							dataGroups[i].color = colors[i];
 							if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
-							$(this).find('td').each(function(){
-								dataGroups[i].points.push( parseFloat($(this).text()) );
+							$(this).find('td').each(function(j){
+								dataGroups[i].points.push( {
+									value: parseFloat($(this).text()),
+									elem: this,
+									tableCords: [i,j]
+								} );
 							});
 						});
 					}
@@ -66,8 +70,12 @@ $.fn.visualize = function(options, container){
 							dataGroups[i].points = [];
 							dataGroups[i].color = colors[i];
 							if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
-							self.find('tbody tr').each(function(){
-								dataGroups[i].points.push( $(this).find('td').eq(i).text()*1 );
+							self.find('tbody tr').each(function(j){
+								dataGroups[i].points.push( {
+									value:  $(this).find('td').eq(i).text()*1,
+									elem: this,
+									tableCords: [i,j]
+								} );
 							});
 						};
 					}
@@ -80,27 +88,36 @@ $.fn.visualize = function(options, container){
 					});
 					return allData;
 				},
+				allItems: function() {
+					var allItems = [];
+					$.each(allData,function(i,row){
+						$.each(row,function(j,item){
+							allItems.push(item)
+						});
+					});
+					return allItems;
+				},
 				dataSum: function(){
 					var dataSum = 0;
-					var allData = this.allData().join(',').split(',');
-					$(allData).each(function(){
-						dataSum += parseFloat(this);
+					var allItems = this.allItems();
+					$.each(allItems,function(i,item){
+						dataSum += parseFloat(item.value);
 					});
-					return dataSum
+					return dataSum;
 				},	
 				topValue: function(){
 						var topValue = 0;
-						var allData = this.allData().join(',').split(',');
-						$(allData).each(function(){
-							if(parseFloat(this,10)>topValue) topValue = parseFloat(this);
+						var allItems = this.allItems();
+						$.each(allItems,function(i,item){
+							if(parseFloat(item.value,10)>topValue) topValue = parseFloat(item.value,10);
 						});
 						return topValue;
 				},
 				bottomValue: function(){
 						var bottomValue = this.topValue();
-						var allData = this.allData().join(',').split(',');
-						$(allData).each(function(){
-							if(this<bottomValue) bottomValue = parseFloat(this);
+						var allItems = this.allItems();
+						$.each(allItems,function(i,item){
+							if(item.value<bottomValue) bottomValue = parseFloat(item.value);
 						});
 						return bottomValue;
 				},
@@ -110,7 +127,7 @@ $.fn.visualize = function(options, container){
 					$(dataGroups).each(function(l){
 						var count = 0;
 						$(dataGroups[l].points).each(function(m){
-							count +=dataGroups[l].points[m];
+							count +=dataGroups[l].points[m].value;
 						});
 						memberTotals.push(count);
 					});
@@ -124,7 +141,7 @@ $.fn.visualize = function(options, container){
 						yTotals[i] =[];
 						var thisTotal = 0;
 						$(dataGroups).each(function(l){
-							yTotals[i].push(this.points[i]);
+							yTotals[i].push(this.points[i].value);
 						});
 						yTotals[i].join(',').split(',');
 						$(yTotals[i]).each(function(){
@@ -177,7 +194,7 @@ $.fn.visualize = function(options, container){
 					return yLabels;
 				}			
 			};
-			
+
 			return tableData;
 		};
 		
@@ -348,13 +365,13 @@ $.fn.visualize = function(options, container){
 						var integer = 0;
 						var myInfo = [0,0];
 						var color = this.color;
-						ctx.moveTo(0,-(points[0]*yScale));
+						ctx.moveTo(0,-(points[0].value*yScale));
 						$.each(points, function(g){
 							myInfo = [h,g];
 							if(o.lineDots) {
-								keyPoint(integer,-(this*yScale),color,myInfo);
+								keyPoint(integer,-(this.value*yScale),color,myInfo);
 							}
-							ctx.lineTo(integer,-(this*yScale));
+							ctx.lineTo(integer,-(this.value*yScale));
 							integer+=xInterval;
 						});
 						ctx.strokeStyle = color;
@@ -530,12 +547,12 @@ $.fn.visualize = function(options, container){
 						for(var i=0; i<points.length; i++){
 							// If the last value is zero, IE will go nuts and not draw anything,
 							// so don't try to draw zero values at all.
-							if (points[i] != 0) {
+							if (points[i].value != 0) {
 								var xVal = (integer-o.barGroupMargin)+(h*linewidth)+linewidth/2;
 								xVal += o.barGroupMargin*2;
 
 								ctx.moveTo(xVal, 0);
-								ctx.lineTo(xVal, Math.round(-points[i]*yScale));
+								ctx.lineTo(xVal, Math.round(-points[i].value*yScale));
 	                        }
 							integer+=barWidth;
 						}
@@ -629,7 +646,7 @@ $.fn.visualize = function(options, container){
 				if(o.type == 'pie') {
 					value = memberTotals[cords[0]] / dataSum * 100;
 				} else {
-					value = dataGroups[cords[0]].points[cords[1]];
+					value = dataGroups[cords[0]].points[cords[1]].value;
 				}
 				var data = {
 					xLabel: xLabels[cords[1]],
