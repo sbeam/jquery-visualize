@@ -404,10 +404,6 @@ $.fn.visualize = function(options, container){
 							if(o.lineDots === 'double') {
 								drawPoint(ctx,this.canvasCords[0],this.canvasCords[1],this.innerColor,this.dotInnerSize);
 							}
-							// if(o.interaction) {
-							// 	interactionPoints.push(this);
-							// }
-							
 						});
 					});
 					
