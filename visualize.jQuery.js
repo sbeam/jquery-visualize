@@ -348,6 +348,8 @@ $.fn.visualize = function(options, container){
 				},
 				
 				draw: function(area) {
+					// prevent drawing on top of previous draw
+					ctx.clearRect(0,-zeroLoc,o.width,o.height);
 					// Calculate each point properties before hand
 					$.each(dataGroups,function(h){
 						var points = this.points;
@@ -711,11 +713,11 @@ $.fn.visualize = function(options, container){
 		$('.visualize-line li:first-child span.line, .visualize-line li:last-child span.line, .visualize-area li:first-child span.line, .visualize-area li:last-child span.line, .visualize-bar li:first-child span.line,.visualize-bar .visualize-labels-y li:last-child span.line').css('border','none');
 		if(!container){
 		//add event for updating
-		canvasContain.bind('visualizeRefresh', function(){
+		self.bind('visualizeRefresh', function(){
 			self.visualize(o, $(this).empty()); 
 		});
 		//add event for redraw
-		canvasContain.bind('visualizeRedraw', function(){
+		self.bind('visualizeRedraw', function(){
 			charts[o.type].draw();
 		});
 		}
