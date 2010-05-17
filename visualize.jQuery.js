@@ -45,6 +45,20 @@ $.fn.visualize = function(options, container){
 		function scrapeTable(){
 			var colors = o.colors;
 			var textColors = o.textColors;
+			var parseLabels = function(direction){
+				var labels = [];
+				if(direction == 'x'){
+					self.find('thead tr:eq(0) th').each(function(){
+						labels.push($(this).html());
+					});
+				}
+				else {
+					self.find('tbody tr th:first-child').each(function(){
+						labels.push($(this).html());
+					});
+				}
+				return labels;
+			};
 			var tableData = {
 				dataGroups: function(){
 					var dataGroups = [];
@@ -163,19 +177,11 @@ $.fn.visualize = function(options, container){
 				totalYRange: function(){
 					return this.topValue() - this.bottomValue();
 				},
-				xLabels: function(){
-					var xLabels = [];
-					if(o.parseDirection == 'x'){
-						self.find('thead tr:eq(0) th').each(function(){
-							xLabels.push($(this).html());
-						});
-					}
-					else {
-						self.find('tbody tr th:first-child').each(function(){
-							xLabels.push($(this).html());
-						});
-					}
-					return xLabels;
+				xLabels: function() {
+					return parseLabels(o.parseDirection);
+				},
+				yRealLabels: function() {
+					return parseLabels(o.parseDirection==='x'?'y':'x');
 				},
 				yLabels: function(){
 					var yLabels = [];
@@ -275,6 +281,15 @@ $.fn.visualize = function(options, container){
 			
 			var yScale,xInterval;
 
+			var drawPoint = function (ctx,x,y,color,size) {
+				ctx.moveTo(x,y);
+				ctx.beginPath();
+				ctx.arc(x,y,size/2,0,2*Math.PI,false);
+				ctx.closePath();
+				ctx.fillStyle = color;
+				ctx.fill();
+			};
+
 			charts.line = {
 
 				setup: function(area){
@@ -325,72 +340,78 @@ $.fn.visualize = function(options, container){
 							.addClass('label');
 					});
 					
+					//start from the bottom left
+					ctx.translate(0,zeroLoc);
+					
 					charts.line.draw(area);
 
 				},
 				
 				draw: function(area) {
-					var drawPoint = function (ctx,x,y,color,size) {
-						ctx.moveTo(x,y);
-						ctx.beginPath();
-						ctx.arc(x,y,size/2,0,2*Math.PI,false);
-						ctx.closePath();
-						ctx.fillStyle = color;
-						ctx.fill();
-					}
-					var pointQueue = [];
-					var counterPoints = 0;
-					var keyPoint = function(x,y,color,myInfo) {
-						var size = o.lineWeight*Math.PI;
-						pointQueue.push(function() {
-							drawPoint(ctx,x,y,color,size);
-							if(o.lineDots === 'double') {
-								drawPoint(ctx,x,y,o.dotInnerColor,size-o.lineWeight*Math.PI/2);
-							}
-							if(o.interaction) {
-								counterPoints++;
-								interactionPoints.push({tableCords:myInfo,canvasCords:[x,y]});
-							}
-						});
-					};
-
-					//start from the bottom left
-					ctx.translate(0,zeroLoc);
-					//iterate and draw
+					// Calculate each point properties before hand
 					$.each(dataGroups,function(h){
+						var points = this.points;
+						var integer = 0;
+						var color = this.color;
+						$.each(points, function(g){
+							this.xLabel = xLabels[h];
+							this.yLabel = yRealLabels[g];
+							this.canvasCords = [integer,-(this.value*yScale)];
+							this.color = color;
+							if(o.lineDots) {
+								this.dotSize = o.dotSize||o.lineWeight*Math.PI;
+								this.dotInnerSize = o.dotInnerSize||o.lineWeight*Math.PI/2;
+								if(o.lineDots == 'double') {
+									this.innerColor = o.dotInnerColor;
+								}
+							}
+							integer+=xInterval;
+						});
+					});
+					// fire custom event so we can enable rich interaction
+					self.trigger('beforeDraw',{dataGroups:dataGroups});
+					// draw lines and areas
+					$.each(dataGroups,function(h){
+						// Draw lines
 						ctx.beginPath();
 						ctx.lineWidth = o.lineWeight;
 						ctx.lineJoin = 'round';
-						var points = this.points;
-						var integer = 0;
-						var myInfo = [0,0];
-						var color = this.color;
-						ctx.moveTo(0,-(points[0].value*yScale));
-						$.each(points, function(g){
-							myInfo = [h,g];
-							if(o.lineDots) {
-								keyPoint(integer,-(this.value*yScale),color,myInfo);
+						$.each(this.points, function(g){
+							var loc = this.canvasCords;
+							if(g == 0) {
+								ctx.moveTo(loc[0],loc[1]);
 							}
-							ctx.lineTo(integer,-(this.value*yScale));
-							integer+=xInterval;
+							ctx.lineTo(loc[0],loc[1]);
 						});
-						ctx.strokeStyle = color;
+						ctx.strokeStyle = this.color;
 						ctx.stroke();
+						// Draw fills
 						if(area){
 							ctx.lineTo(integer,0);
 							ctx.lineTo(0,0);
 							ctx.closePath();
-							ctx.fillStyle = color;
+							ctx.fillStyle = this.color;
 							ctx.globalAlpha = .3;
 							ctx.fill();
 							ctx.globalAlpha = 1.0;
 						}
 						else {ctx.closePath();}
-						self.trigger('beforeDrawPoints',pointQueue);
-						$.each(pointQueue,function(){
-							pointQueue.shift().call();
+					});
+					// draw points
+					$.each(dataGroups,function(h){
+						$.each(this.points, function(g){
+							drawPoint(ctx,this.canvasCords[0],this.canvasCords[1],this.color,this.dotSize);
+							if(o.lineDots === 'double') {
+								drawPoint(ctx,this.canvasCords[0],this.canvasCords[1],this.innerColor,this.dotInnerSize);
+							}
+							if(o.interaction) {
+								interactionPoints.push(this);
+							}
+							
 						});
 					});
+					
+					
 				}
 			};
 		
@@ -596,6 +617,7 @@ $.fn.visualize = function(options, container){
 		var zeroLoc = o.height * (topValue/totalYRange);
 		var xLabels = tableData.xLabels();
 		var yLabels = tableData.yLabels();
+		var yRealLabels = tableData.yRealLabels();
 								
 		//title/key container
 		if(o.appendTitle || o.appendKey){
@@ -611,9 +633,8 @@ $.fn.visualize = function(options, container){
 		//append key
 		if(o.appendKey){
 			var newKey = $('<ul class="visualize-key"></ul>');
-			var selector = (o.parseDirection == 'x') ? 'tbody tr th:first-child' : 'thead tr:eq(0) th' ;
-			self.find(selector).each(function(i){
-				$('<li><span class="visualize-key-color" style="background: '+dataGroups[i].color+'"></span><span class="visualize-key-label">'+ $(this).text() +'</span></li>')
+			$.each(yRealLabels, function(i,label){
+				$('<li><span class="visualize-key-color" style="background: '+dataGroups[i].color+'"></span><span class="visualize-key-label">'+ label +'</span></li>')
 					.appendTo(newKey);
 			});
 			newKey.appendTo(infoContain);
@@ -716,6 +737,10 @@ $.fn.visualize = function(options, container){
 		//add event for updating
 		canvasContain.bind('visualizeRefresh', function(){
 			self.visualize(o, $(this).empty()); 
+		});
+		//add event for redraw
+		canvasContain.bind('visualizeRedraw', function(){
+			charts[o.type].draw();
 		});
 		}
 	}).next(); //returns canvas(es)
