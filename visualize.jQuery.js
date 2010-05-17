@@ -356,8 +356,8 @@ $.fn.visualize = function(options, container){
 						var integer = 0;
 						var color = this.color;
 						$.each(points, function(g){
-							this.xLabel = xLabels[h];
-							this.yLabel = yRealLabels[g];
+							this.xLabel = xLabels[g];
+							this.yLabel = yRealLabels[h];
 							this.canvasCords = [integer,-(this.value*yScale)];
 							this.color = color;
 							if(o.lineDots) {
