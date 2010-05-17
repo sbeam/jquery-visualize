@@ -404,9 +404,9 @@ $.fn.visualize = function(options, container){
 							if(o.lineDots === 'double') {
 								drawPoint(ctx,this.canvasCords[0],this.canvasCords[1],this.innerColor,this.dotInnerSize);
 							}
-							if(o.interaction) {
-								interactionPoints.push(this);
-							}
+							// if(o.interaction) {
+							// 	interactionPoints.push(this);
+							// }
 							
 						});
 					});
@@ -653,36 +653,14 @@ $.fn.visualize = function(options, container){
 					'z-index': 200
 				})
 				.appendTo(canvasContain);
-			var interactionPoints = [];
-			var triggerInteraction = function(overOut,cords) {
-				var selector = (o.parseDirection == 'x') ? 'tbody tr th:first-child:eq('+cords[0]+')' : 'thead tr:eq(0) th:eq('+cords[0]+')' ;
-				var zLabel = self.find(selector).text();
-				if(o.type == 'pie') {
-					selector = (o.parseDirection == 'x') ? 'tbody tr:eq('+(cords[0])+')' : 'tbody tr td:eq('+cords[0]+')' ;
-				} else {
-					selector = (o.parseDirection == 'x') ? 'tbody tr:eq('+cords[0]+') td:eq('+cords[1]+')' : 'tbody tr:eq('+cords[1]+') td:eq('+cords[0]+')' ;
-				}
-				var elem = self.find(selector);
-				var value = 0;
-				if(o.type == 'pie') {
-					value = memberTotals[cords[0]] / dataSum * 100;
-				} else {
-					value = dataGroups[cords[0]].points[cords[1]].value;
-				}
-				var data = {
-					xLabel: xLabels[cords[1]],
-					yLabel: zLabel,
-					value: value,
-					x: cords[2],
-					y: cords[3]
-				}
-				elem.trigger('mouse'+overOut,data);
-				// console.log(inOut,elem,data);
+
+			var triggerInteraction = function(overOut,point) {
+				$(point.elem).trigger('mouse'+overOut,point);
 			};
 
 			var over=false, last=false, started=false;
 			tracker.mousemove(function(e){
-				var x,y,x1,y1,data,point,dist,i,current,selector,zLabel,elem,color,minDist,found,ev=e.originalEvent;
+				var x,y,x1,y1,data,dist,i,current,selector,zLabel,elem,color,minDist,found,ev=e.originalEvent;
 
 				// get mouse position relative to the tracker/canvas
 				x = ev.layerX || ev.offsetX || 0;
@@ -690,28 +668,30 @@ $.fn.visualize = function(options, container){
 
 				found = false;
 				minDist = started?30000:(o.type=='pie'?(Math.round(canvas.height()/2)-o.pieMargin)/3:o.lineWeight*4);
-				for(i=0;i<interactionPoints.length;i+=1) {
-					current = interactionPoints[i];
-					x1 = current.canvasCords[0];
-					y1 = current.canvasCords[1] + (o.type=="pie"?0:zeroLoc);
-					dist = Math.sqrt( (x1 - x)*(x1 - x) + (y1 - y)*(y1 - y) );
-					if(dist < minDist) {
-						found = current.tableCords;
-						minDist = dist;
-					}
-				}
-				over = point = found;
-
+				// iterate datagroups to find points with matching
+				$.each(dataGroups,function(i,row){
+					$.each(row.points,function(j,current){
+						x1 = current.canvasCords[0];
+						y1 = current.canvasCords[1] + (o.type=="pie"?0:zeroLoc);
+						dist = Math.sqrt( (x1 - x)*(x1 - x) + (y1 - y)*(y1 - y) );
+						if(dist < minDist) {
+							found = current;
+							minDist = dist;
+						}
+					});
+				});
+				// trigger over and out only when state changes, instead of on every mousemove
+				over = found;
 				if(over != last) {
 					if(over) {
 						if(last) {
-							triggerInteraction('out',last.concat(x,y));
+							triggerInteraction('out',last);
 						}
-						triggerInteraction('over',over.concat(x,y));
+						triggerInteraction('over',over);
 						last = over;
 					}
 					if(last && !over) {
-						triggerInteraction('out',last.concat(x,y));
+						triggerInteraction('out',last);
 						last=false;
 					}
 					started=true;
