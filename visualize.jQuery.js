@@ -389,7 +389,7 @@ $.fn.visualize = function(options, container){
 						ctx.stroke();
 						// Draw fills
 						if(area){
-							ctx.lineTo(integer,0);
+							ctx.lineTo(this.points[this.points.length-1].canvasCords[0],0);
 							ctx.lineTo(0,0);
 							ctx.closePath();
 							ctx.fillStyle = this.color;
@@ -400,15 +400,16 @@ $.fn.visualize = function(options, container){
 						else {ctx.closePath();}
 					});
 					// draw points
-					$.each(dataGroups,function(h){
-						$.each(this.points, function(g){
-							drawPoint(ctx,this.canvasCords[0],this.canvasCords[1],this.color,this.dotSize);
-							if(o.lineDots === 'double') {
-								drawPoint(ctx,this.canvasCords[0],this.canvasCords[1],this.innerColor,this.dotInnerSize);
-							}
+					if(o.lineDots) {
+						$.each(dataGroups,function(h){
+							$.each(this.points, function(g){
+								drawPoint(ctx,this.canvasCords[0],this.canvasCords[1],this.color,this.dotSize);
+								if(o.lineDots === 'double') {
+									drawPoint(ctx,this.canvasCords[0],this.canvasCords[1],this.innerColor,this.dotInnerSize);
+								}
+							});
 						});
-					});
-					
+					}
 					
 				}
 			};
