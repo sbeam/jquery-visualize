@@ -371,7 +371,7 @@ $.fn.visualize = function(options, container){
 						});
 					});
 					// fire custom event so we can enable rich interaction
-					self.trigger('beforeDraw',{dataGroups:dataGroups});
+					self.trigger('vizualizeBeforeDraw',{options:o,table:self,canvasContain:canvasContain,dataGroups:dataGroups});
 					// draw lines and areas
 					$.each(dataGroups,function(h){
 						// Draw lines
@@ -653,7 +653,7 @@ $.fn.visualize = function(options, container){
 				.appendTo(canvasContain);
 
 			var triggerInteraction = function(overOut,point) {
-				$(point.elem).trigger('mouse'+overOut,point);
+				self.trigger('vizualize'+overOut,point);
 			};
 
 			var over=false, last=false, started=false;
@@ -683,13 +683,13 @@ $.fn.visualize = function(options, container){
 				if(over != last) {
 					if(over) {
 						if(last) {
-							triggerInteraction('out',last);
+							triggerInteraction('Out',last);
 						}
-						triggerInteraction('over',over);
+						triggerInteraction('Over',over);
 						last = over;
 					}
 					if(last && !over) {
-						triggerInteraction('out',last);
+						triggerInteraction('Out',last);
 						last=false;
 					}
 					started=true;
@@ -712,14 +712,14 @@ $.fn.visualize = function(options, container){
 		//clean up some doubled lines that sit on top of canvas borders (done via JS due to IE)
 		$('.visualize-line li:first-child span.line, .visualize-line li:last-child span.line, .visualize-area li:first-child span.line, .visualize-area li:last-child span.line, .visualize-bar li:first-child span.line,.visualize-bar .visualize-labels-y li:last-child span.line').css('border','none');
 		if(!container){
-		//add event for updating
-		self.bind('visualizeRefresh', function(){
-			self.visualize(o, $(this).empty()); 
-		});
-		//add event for redraw
-		self.bind('visualizeRedraw', function(){
-			charts[o.type].draw();
-		});
+			//add event for updating
+			self.bind('visualizeRefresh', function(){
+				self.visualize(o, $(this).empty()); 
+			});
+			//add event for redraw
+			self.bind('visualizeRedraw', function(){
+				charts[o.type].draw();
+			});
 		}
 	}).next(); //returns canvas(es)
 };
