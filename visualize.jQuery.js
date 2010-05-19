@@ -23,10 +23,10 @@ $.fn.visualize = function(options, container){
 			textColors: [], //corresponds with colors array. null/undefined items will fall back to CSS
 			parseDirection: 'x', //which direction to parse the table data
 			pieMargin: 20, //pie charts only - spacing around pie
+			pieLabelsAsPercent: true,
 			pieLabelPos: 'inside',
 			lineWeight: 4, //for line and area - stroke weight
-			lineDots: 'double', //also available: 'single', false (ignores lineMargin)
-			lineMargin: 0, //line charts only - space around lines
+			lineDots: false, //also available: 'single', 'double'
 			dotInnerColor: "#ffffff", // only used for lineDots:'double'
 			barGroupMargin: 10,
 			barMargin: 1, //space around bars in bar chart (added to both sides of bar)
@@ -253,9 +253,14 @@ $.fn.visualize = function(options, container){
 				        var labely = Math.round(centery - Math.cos(sliceMiddle * Math.PI * 2) * (distance));
 				        var leftRight = (labelx > centerx) ? 'right' : 'left';
 				        var topBottom = (labely > centery) ? 'bottom' : 'top';
-				        var labeltext = $('<span class="visualize-label">' + Math.round(fraction*100) + '%</span>')
-				        	.css(leftRight, 0)
-				        	.css(topBottom, 0);
+				        var percentage = parseFloat((fraction*100).toFixed(2));
+
+				        if(percentage){
+				        	var labelval = (o.pieLabelsAsPercent) ? percentage + '%' : this;
+					        var labeltext = $('<span class="visualize-label">' + labelval +'</span>')
+					        	.css(leftRight, 0)
+					        	.css(topBottom, 0);
+					        	if(labeltext)
 				        var label = $('<li class="visualize-label-pos"></li>')
 				       			.appendTo(labels)
 				        		.css({left: labelx, top: labely})
@@ -267,11 +272,8 @@ $.fn.visualize = function(options, container){
 
 				        if(dataGroups[i].textColor){ labeltext.css('color', dataGroups[i].textColor); }
 
-						if(o.interaction) {
-							interactionPoints.push({tableCords:[i,0],canvasCords:[labelx,labely]})
-						}
+				        }
 					}
-
 			      	counter+=fraction;
 				});
 			}
@@ -353,7 +355,7 @@ $.fn.visualize = function(options, container){
 					// Calculate each point properties before hand
 					$.each(dataGroups,function(h){
 						var points = this.points;
-						var integer = 0;
+						var integer = 0; // the current offset
 						var color = this.color;
 						$.each(points, function(g){
 							this.xLabel = xLabels[g];
@@ -389,7 +391,9 @@ $.fn.visualize = function(options, container){
 						ctx.stroke();
 						// Draw fills
 						if(area){
-							ctx.lineTo(this.points[this.points.length-1].canvasCords[0],0);
+							var integer = this.points[this.points.length-1].canvasCords[0];
+							if (isFinite(integer))
+								ctx.lineTo(integer,0);
 							ctx.lineTo(0,0);
 							ctx.closePath();
 							ctx.fillStyle = this.color;
@@ -629,6 +633,7 @@ $.fn.visualize = function(options, container){
 			$('<div class="visualize-title">'+ title +'</div>').appendTo(infoContain);
 		}
 		
+		
 		//append key
 		if(o.appendKey){
 			var newKey = $('<ul class="visualize-key"></ul>');
@@ -700,9 +705,7 @@ $.fn.visualize = function(options, container){
 		
 		//append new canvas to page
 		if(!container){canvasContain.insertAfter(this); }
-		if( typeof(G_vmlCanvasManager) != 'undefined' ){
-			G_vmlCanvasManager.initElement(canvas[0]);
-		}
+		if( typeof(G_vmlCanvasManager) != 'undefined' ){ G_vmlCanvasManager.init(); G_vmlCanvasManager.initElement(canvas[0]); }	
 		
 		//set up the drawing board	
 		var ctx = canvas[0].getContext('2d');
