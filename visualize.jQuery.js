@@ -658,8 +658,8 @@ $.fn.visualize = function(options, container){
 				})
 				.appendTo(canvasContain);
 
-			var triggerInteraction = function(overOut,point) {
-				self.trigger('vizualize'+overOut,point);
+			var triggerInteraction = function(overOut,data) {
+				self.trigger('vizualize'+overOut,data);
 			};
 
 			var over=false, last=false, started=false;
@@ -689,17 +689,21 @@ $.fn.visualize = function(options, container){
 				if(over != last) {
 					if(over) {
 						if(last) {
-							triggerInteraction('Out',last);
+							triggerInteraction('Out',{point:last});
 						}
-						triggerInteraction('Over',over);
+						triggerInteraction('Over',{point:over});
 						last = over;
 					}
 					if(last && !over) {
-						triggerInteraction('Out',last);
+						triggerInteraction('Out',{point:last});
 						last=false;
 					}
 					started=true;
 				}
+			});
+			tracker.mouseleave(function(){
+				triggerInteraction('Out',{point:last,mouseOutGraph:true});
+				over = (last = false);
 			});
 		}
 		
