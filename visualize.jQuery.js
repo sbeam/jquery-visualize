@@ -19,10 +19,13 @@ $.fn.visualize = function(options, container){
 			appendTitle: true, //table caption text is added to chart
 			title: null, //grabs from table caption if null
 			appendKey: true, //color key is added to chart
+			rowFilter: ' ',
+			colFilter: ' ',
 			colors: ['#be1e2d','#666699','#92d5ea','#ee8310','#8d10ee','#5a3b16','#26a4ed','#f45a90','#e9e744'],
 			textColors: [], //corresponds with colors array. null/undefined items will fall back to CSS
 			parseDirection: 'x', //which direction to parse the table data
 			pieMargin: 20, //pie charts only - spacing around pie
+			pieLabelsAsPercent: true,
 			pieLabelPos: 'inside',
 			lineWeight: 4, //for line and area - stroke weight
 			lineDots: options.type == 'line' ? 'double' : false, //also available: 'single', false
@@ -47,25 +50,25 @@ $.fn.visualize = function(options, container){
 				dataGroups: function(){
 					var dataGroups = [];
 					if(o.parseDirection == 'x'){
-						self.find('tr:gt(0)').each(function(i){
+						self.find('tr:gt(0)').filter(o.rowFilter).each(function(i){
 							dataGroups[i] = {};
 							dataGroups[i].points = [];
 							dataGroups[i].color = colors[i];
 							if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
-							$(this).find('td').each(function(){
+							$(this).find('td').filter(o.colFilter).each(function(){
 								dataGroups[i].points.push( parseFloat($(this).text()) );
 							});
 						});
 					}
 					else {
-						var cols = self.find('tr:eq(1) td').size();
+						var cols = self.find('tr:eq(1) td').filter(o.colFilter).size();
 						for(var i=0; i<cols; i++){
 							dataGroups[i] = {};
 							dataGroups[i].points = [];
 							dataGroups[i].color = colors[i];
 							if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
-							self.find('tr:gt(0)').each(function(){
-								dataGroups[i].points.push( $(this).find('td').eq(i).text()*1 );
+							self.find('tr:gt(0)').filter(o.rowFilter).each(function(){
+								dataGroups[i].points.push( $(this).find('td').filter(o.colFilter).eq(i).text()*1 );
 							});
 						};
 					}
@@ -147,12 +150,12 @@ $.fn.visualize = function(options, container){
 				xLabels: function(){
 					var xLabels = [];
 					if(o.parseDirection == 'x'){
-						self.find('tr:eq(0) th').each(function(){
+						self.find('tr:eq(0) th').filter(o.colFilter).each(function(){
 							xLabels.push($(this).html());
 						});
 					}
 					else {
-						self.find('tr:gt(0) th').each(function(){
+						self.find('tr:gt(0) th').filter(o.rowFilter).each(function(){
 							xLabels.push($(this).html());
 						});
 					}
@@ -218,19 +221,25 @@ $.fn.visualize = function(options, container){
 			        var labely = Math.round(centery - Math.cos(sliceMiddle * Math.PI * 2) * (distance));
 			        var leftRight = (labelx > centerx) ? 'right' : 'left';
 			        var topBottom = (labely > centery) ? 'bottom' : 'top';
-			        var labeltext = $('<span class="visualize-label">' + Math.round(fraction*100) + '%</span>')
-			        	.css(leftRight, 0)
-			        	.css(topBottom, 0);
-			        var label = $('<li class="visualize-label-pos"></li>')
-			       			.appendTo(labels)
-			        		.css({left: labelx, top: labely})
-			        		.append(labeltext);	
-			        labeltext
-			        	.css('font-size', radius / 8)		
-			        	.css('margin-'+leftRight, -labeltext.width()/2)
-			        	.css('margin-'+topBottom, -labeltext.outerHeight()/2);
-			        	
-			        if(dataGroups[i].textColor){ labeltext.css('color', dataGroups[i].textColor); }	
+			        var percentage = parseFloat((fraction*100).toFixed(2));
+
+			        if(percentage){
+			        	var labelval = (o.pieLabelsAsPercent) ? percentage + '%' : this;
+				        var labeltext = $('<span class="visualize-label">' + labelval +'</span>')
+				        	.css(leftRight, 0)
+				        	.css(topBottom, 0);
+				        	if(labeltext)
+				        var label = $('<li class="visualize-label-pos"></li>')
+				       			.appendTo(labels)
+				        		.css({left: labelx, top: labely})
+				        		.append(labeltext);	
+				        labeltext
+				        	.css('font-size', radius / 8)		
+				        	.css('margin-'+leftRight, -labeltext.width()/2)
+				        	.css('margin-'+topBottom, -labeltext.outerHeight()/2);
+				        	
+				        if(dataGroups[i].textColor){ labeltext.css('color', dataGroups[i].textColor); }	
+			        }
 			      	counter+=fraction;
 				});
 			},
@@ -535,11 +544,19 @@ $.fn.visualize = function(options, container){
 			$('<div class="visualize-title">'+ title +'</div>').appendTo(infoContain);
 		}
 		
+		
 		//append key
 		if(o.appendKey){
 			var newKey = $('<ul class="visualize-key"></ul>');
-			var selector = (o.parseDirection == 'x') ? 'tr:gt(0) th' : 'tr:eq(0) th' ;
-			self.find(selector).each(function(i){
+			var selector;
+			if(o.parseDirection == 'x'){
+				selector = self.find('tr:gt(0) th').filter(o.rowFilter);
+			}
+			else{
+				selector = self.find('tr:eq(0) th').filter(o.colFilter);
+			}
+			
+			selector.each(function(i){
 				$('<li><span class="visualize-key-color" style="background: '+dataGroups[i].color+'"></span><span class="visualize-key-label">'+ $(this).text() +'</span></li>')
 					.appendTo(newKey);
 			});
@@ -549,7 +566,7 @@ $.fn.visualize = function(options, container){
 		//append new canvas to page
 		
 		if(!container){canvasContain.insertAfter(this); }
-		if( typeof(G_vmlCanvasManager) != 'undefined' ){ G_vmlCanvasManager.initElement(canvas[0]); }	
+		if( typeof(G_vmlCanvasManager) != 'undefined' ){ G_vmlCanvasManager.init(); G_vmlCanvasManager.initElement(canvas[0]); }	
 		
 		//set up the drawing board	
 		var ctx = canvas[0].getContext('2d');
