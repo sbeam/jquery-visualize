@@ -48,13 +48,23 @@ $.fn.visualize = function(options, container){
 			var parseLabels = function(direction){
 				var labels = [];
 				if(direction == 'x'){
-					self.find('thead tr:eq(0) th').each(function(){
-						labels.push($(this).html());
+					self.find('thead tr').each(function(i){
+						$(this).find('th').each(function(j){
+							if(!labels[j]) {
+								labels[j] = [];
+							}
+							labels[j][i] = $(this).text()
+						})
 					});
 				}
 				else {
-					self.find('tbody tr th:first-child').each(function(){
-						labels.push($(this).html());
+					self.find('tbody tr').each(function(i){
+						$(this).find('th').each(function(j) {
+							if(!labels[i]) {
+								labels[i] = [];
+							}
+							labels[i][j] = $(this).text()
+						});
 					});
 				}
 				return labels;
@@ -178,9 +188,16 @@ $.fn.visualize = function(options, container){
 					return this.topValue() - this.bottomValue();
 				},
 				xLabels: function() {
+					var ret = [];
+					$.each(this.xAllLabels(),function(i,labels) {
+						ret.push(labels[0]);
+					});
+					return ret;
+				},
+				xAllLabels: function() {
 					return parseLabels(o.parseDirection);
 				},
-				yRealLabels: function() {
+				yAllLabels: function() {
 					return parseLabels(o.parseDirection==='x'?'y':'x');
 				},
 				yLabels: function(){
@@ -358,8 +375,8 @@ $.fn.visualize = function(options, container){
 						var integer = 0; // the current offset
 						var color = this.color;
 						$.each(points, function(g){
-							this.xLabel = xLabels[g];
-							this.yLabel = yRealLabels[h];
+							this.xLabels = xAllLabels[g];
+							this.yLabels = yAllLabels[h];
 							this.canvasCords = [integer,-(this.value*yScale)];
 							this.color = color;
 							if(o.lineDots) {
@@ -620,7 +637,8 @@ $.fn.visualize = function(options, container){
 		var zeroLoc = o.height * (topValue/totalYRange);
 		var xLabels = tableData.xLabels();
 		var yLabels = tableData.yLabels();
-		var yRealLabels = tableData.yRealLabels();
+		var yAllLabels = tableData.yAllLabels();
+		var xAllLabels = tableData.xAllLabels();
 								
 		//title/key container
 		if(o.appendTitle || o.appendKey){
