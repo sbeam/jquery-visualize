@@ -375,6 +375,7 @@ $.fn.visualize = function(options, container){
 						var integer = 0; // the current offset
 						var color = this.color;
 						$.each(points, function(g){
+							this.offset = zeroLoc;
 							this.xLabels = xAllLabels[g];
 							this.yLabels = yAllLabels[h];
 							this.canvasCords = [integer,-(this.value*yScale)];
