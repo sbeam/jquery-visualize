@@ -735,7 +735,7 @@ $.fn.visualize = function(options, container){
 
 		// init plugins
 		$.each($.visualizePlugins,function(i,plugin){
-			plugin.call(self,options,tableData);
+			plugin.call(self,o,tableData);
 		});
 
 		//create chart

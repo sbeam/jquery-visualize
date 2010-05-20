@@ -16,8 +16,8 @@
 		//configuration
 		var o = $.extend({
 			tooltip: false,
-			align: 'auto', // also available 'left' and 'right'
-			valign: 'top',
+			tooltipalign: 'auto', // also available 'left' and 'right'
+			tooltipvalign: 'top',
 			tooltipclass: 'visualize-tooltip',
 			tooltiphtml: function(data){
 				return '<p>'+data.point.value+' - '+data.point.yLabels[0]+'</p>'
@@ -29,7 +29,7 @@
 		if(!o.tooltip) {return;}
 		
 		var self = $(this),
-			canvasContain = self.next();
+			canvasContain = self.next(),
 			tracker = canvasContain.find('.visualize-interaction-tracker');
 		
 		// IE needs background color and opacity white or the tracker stays behind the tooltip
@@ -50,11 +50,29 @@
 		canvasContain.append(tooltip);
 		
 		self.bind('vizualizeOver',function visualizeTooltipOver(e,data){
-			tooltip.css({
-				display:'block',
-				top: data.point.canvasCords[1]+data.point.offset+'px',
-				left: data.point.canvasCords[0]+'px'
-			}).html(o.tooltiphtml(data));
+			var left,right,top,clasRem,clasAd,bottom,x=data.point.canvasCords[0],y=data.point.canvasCords[1]+data.point.offset;
+			if(o.tooltipalign == 'left' || ( o.tooltipalign=='auto' && x<=o.width/2 ) ) {
+				left = x+'px';
+				right = '';
+				clasAdd="tooltipleft";
+				clasRem="tooltipright";
+			} else {
+				left = '';
+				right = Math.abs(x-o.width)+'px';
+				clasAdd="tooltipright";
+				clasRem="tooltipleft";
+			}
+			console.log('left',left,'right',right);
+			tooltip
+				.css({
+					display:'block',
+					top: y+'px',
+					left: left,
+					right: right
+				})
+				.addClass(clasAdd)
+				.removeClass(clasRem)
+				.html(o.tooltiphtml(data));
 		});
 		
 		self.bind('vizualizeOut',function visualizeTooltipOut(e,data){
