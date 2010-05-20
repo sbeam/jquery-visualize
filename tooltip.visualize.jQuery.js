@@ -62,17 +62,17 @@
 				clasAdd="tooltipright";
 				clasRem="tooltipleft";
 			}
-			console.log('left',left,'right',right);
+			
 			tooltip
+				.addClass(clasAdd)
+				.removeClass(clasRem)
+				.html(o.tooltiphtml(data))
 				.css({
 					display:'block',
 					top: y+'px',
 					left: left,
 					right: right
-				})
-				.addClass(clasAdd)
-				.removeClass(clasRem)
-				.html(o.tooltiphtml(data));
+				});
 		});
 		
 		self.bind('vizualizeOut',function visualizeTooltipOut(e,data){
