@@ -656,7 +656,7 @@ $.fn.visualize = function(options, container){
 		//append key
 		if(o.appendKey){
 			var newKey = $('<ul class="visualize-key"></ul>');
-			$.each(yRealLabels, function(i,label){
+			$.each(yAllLabels, function(i,label){
 				$('<li><span class="visualize-key-color" style="background: '+dataGroups[i].color+'"></span><span class="visualize-key-label">'+ label +'</span></li>')
 					.appendTo(newKey);
 			});
@@ -733,6 +733,11 @@ $.fn.visualize = function(options, container){
 		//set up the drawing board	
 		var ctx = canvas[0].getContext('2d');
 
+		// init plugins
+		$.each($.visualizePlugins,function(i,plugin){
+			plugin.call(self,options,tableData);
+		});
+
 		//create chart
 		charts[o.type].setup();
 		
@@ -750,6 +755,10 @@ $.fn.visualize = function(options, container){
 		}
 	}).next(); //returns canvas(es)
 };
+// create array for plugins. if you wish to make a plugin,
+// just push your init funcion into this array
+$.visualizePlugins = [];
+
 })(jQuery);
 
 
