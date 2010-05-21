@@ -50,7 +50,7 @@
 		canvasContain.append(tooltip);
 		
 		self.bind('vizualizeOver',function visualizeTooltipOver(e,data){
-			var left,right,top,clasRem,clasAd,bottom,x=data.point.canvasCords[0],y=data.point.canvasCords[1]+data.point.offset;
+			var left,right,top,clasRem,clasAd,bottom,x=Math.ceil(data.point.canvasCords[0]),y=Math.ceil(data.point.canvasCords[1]+data.point.offset);
 			if(o.tooltipalign == 'left' || ( o.tooltipalign=='auto' && x<=o.width/2 ) ) {
 				left = x+'px';
 				right = '';
