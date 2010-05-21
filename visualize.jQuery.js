@@ -346,7 +346,7 @@ $.fn.visualize = function(options, container){
 						.insertBefore(canvas);
 
 					$.each(yLabels, function(i){  
-						var thisLi = $('<li><span>'+this+'</span></li>')
+						var thisLi = $('<li><span>'+Math.round(this*100)/100+'</span></li>')
 							.prepend('<span class="line"  />')
 							.css('bottom',liBottom*i)
 							.prependTo(ylabelsUL);
