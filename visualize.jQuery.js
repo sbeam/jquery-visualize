@@ -194,8 +194,9 @@ $.fn.visualize = function(options, container){
 		
 		var charts = {};
 		
-		
 		charts.pie = {
+			interactionPoints: dataGroups,
+			
 			setup: function() {
 				charts.pie.draw(true);
 			},
@@ -242,6 +243,12 @@ $.fn.visualize = function(options, container){
 				        var topBottom = (labely > centery) ? 'bottom' : 'top';
 				        var percentage = parseFloat((fraction*100).toFixed(2));
 
+						// interaction variables
+						row.canvasCords = [labelx,labely];
+						row.offset = 0; // related to zeroLoc and plugin API
+						row.value = row.groupTotal;
+
+
 				        if(percentage){
 				        	var labelval = (o.pieLabelsAsPercent) ? percentage + '%' : row.groupTotal;
 					        var labeltext = $('<span class="visualize-label">' + labelval +'</span>')
@@ -280,6 +287,8 @@ $.fn.visualize = function(options, container){
 			};
 
 			charts.line = {
+				
+				interactionPoints: allItems,
 
 				setup: function(area){
 
@@ -641,16 +650,14 @@ $.fn.visualize = function(options, container){
 				found = false;
 				minDist = started?30000:(o.type=='pie'?(Math.round(canvas.height()/2)-o.pieMargin)/3:o.lineWeight*4);
 				// iterate datagroups to find points with matching
-				$.each(dataGroups,function(i,row){
-					$.each(row.points,function(j,current){
-						x1 = current.canvasCords[0];
-						y1 = current.canvasCords[1] + (o.type=="pie"?0:zeroLoc);
-						dist = Math.sqrt( (x1 - x)*(x1 - x) + (y1 - y)*(y1 - y) );
-						if(dist < minDist) {
-							found = current;
-							minDist = dist;
-						}
-					});
+				$.each(charts[o.type].interactionPoints,function(i,current){
+					x1 = current.canvasCords[0];
+					y1 = current.canvasCords[1] + (o.type=="pie"?0:zeroLoc);
+					dist = Math.sqrt( (x1 - x)*(x1 - x) + (y1 - y)*(y1 - y) );
+					if(dist < minDist) {
+						found = current;
+						minDist = dist;
+					}
 				});
 				// trigger over and out only when state changes, instead of on every mousemove
 				over = found;
