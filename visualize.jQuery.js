@@ -636,7 +636,12 @@ $.fn.visualize = function(options, container){
 				})
 				.appendTo(canvasContain);
 
-			var triggerInteraction = function(overOut,data) {
+			var triggerInteraction = function(overOut,point) {
+				var data = {
+					point:point,
+					canvasContain:canvasContain,
+					tableData:tableData
+				};
 				self.trigger('vizualize'+overOut,data);
 			};
 
@@ -665,13 +670,13 @@ $.fn.visualize = function(options, container){
 				if(over != last) {
 					if(over) {
 						if(last) {
-							triggerInteraction('Out',{point:last});
+							triggerInteraction('Out',last);
 						}
-						triggerInteraction('Over',{point:over});
+						triggerInteraction('Over',over);
 						last = over;
 					}
 					if(last && !over) {
-						triggerInteraction('Out',{point:last});
+						triggerInteraction('Out',last);
 						last=false;
 					}
 					started=true;
