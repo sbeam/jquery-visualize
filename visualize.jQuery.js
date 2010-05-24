@@ -107,46 +107,29 @@ $.fn.visualize = function(options, container){
 			}
 			
 		
-			tableData.allData = [];
-			$(dataGroups).each(function(){
-				tableData.allData.push(this.points);
+			var allItems = tableData.allItems = [];
+			$(dataGroups).each(function(i,row){
+				var count = 0;
+				$.each(row.points,function(j,point){
+					allItems.push(point);
+					count += point.value;
+				});
+				row.groupTotal = count;
 			});
 			
-			var allItems = tableData.allItems = [];
-			$.each(tableData.allData,function(i,row){
-				$.each(row,function(j,item){
-					allItems.push(item);
-				});
-			});
-		
 			tableData.dataSum = 0;
+			tableData.topValue = 0;
+			tableData.bottomValue = Infinity;
 			$.each(allItems,function(i,item){
 				tableData.dataSum += parseFloat(item.value);
-			});
-			
-			tableData.topValue = 0;
-			$.each(allItems,function(i,item){
 				if(parseFloat(item.value,10)>tableData.topValue) {
 					tableData.topValue = parseFloat(item.value,10);
 				}
-			});
-			
-			tableData.bottomValue = tableData.topValue;
-			$.each(allItems,function(i,item){
 				if(item.value<tableData.bottomValue) {
 					tableData.bottomValue = parseFloat(item.value);	
 				}
 			});
 			
-			tableData.memberTotals = [];
-			$(dataGroups).each(function(i,row){
-				var count = 0;
-				$(row.points).each(function(m){
-					count +=row.points[m].value;
-				});
-				tableData.memberTotals.push(count);
-			});
-		
 			tableData.xAllLabels = parseLabels(o.parseDirection);
 			tableData.yAllLabels = parseLabels(o.parseDirection==='x'?'y':'x');
 		
@@ -235,8 +218,8 @@ $.fn.visualize = function(options, container){
 
 
 				//draw the pie pieces
-				$.each(memberTotals, function(i){
-					var fraction = this / dataSum;
+				$.each(dataGroups, function(i,row){
+					var fraction = row.groupTotal / dataSum;
                     if (fraction <= 0 || isNaN(fraction))
                         return;
 					ctx.beginPath();
@@ -260,7 +243,7 @@ $.fn.visualize = function(options, container){
 				        var percentage = parseFloat((fraction*100).toFixed(2));
 
 				        if(percentage){
-				        	var labelval = (o.pieLabelsAsPercent) ? percentage + '%' : this;
+				        	var labelval = (o.pieLabelsAsPercent) ? percentage + '%' : row.groupTotal;
 					        var labeltext = $('<span class="visualize-label">' + labelval +'</span>')
 					        	.css(leftRight, 0)
 					        	.css(topBottom, 0);
@@ -358,9 +341,9 @@ $.fn.visualize = function(options, container){
 					ctx.clearRect(0,-zeroLoc,o.width,o.height);
 					// Calculate each point properties before hand
 					var integer=0;
-					$.each(allData,function(i,row){
+					$.each(dataGroups,function(i,row){
 						var integer = 0; // the current offset
-						$.each(row, function(j,point){
+						$.each(row.points, function(j,point){
 							point.canvasCords = [integer,-(point.value*yScale)];
 							if(o.lineDots) {
 								point.dotSize = o.dotSize||o.lineWeight*Math.PI;
@@ -611,7 +594,6 @@ $.fn.visualize = function(options, container){
 		//scrape table (this should be cleaned up into an obj)
 		var tableData = scrapeTable();
 		var dataGroups = tableData.dataGroups;
-		var allData = tableData.allData;
 		var dataSum = tableData.dataSum;
 		var topValue = tableData.topValue;
 		var bottomValue = tableData.bottomValue;
