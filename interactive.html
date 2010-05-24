@@ -18,13 +18,45 @@
 					title: '2009 Total Sales by Individual',
 					interaction: true,
 					tooltip: true
-				});
+				});	
 				$('table.line').visualize({
 					type: 'line',
 					lineDots: 'double',
 					interaction: true,
 					tooltip: true
 				});
+				
+				// Change inner color on mouseover intecation
+				if(!$.browser.msie) { // IE is a bit slow, but is possible. Future versions may solve this problem
+					var currentHoverPoint = null;
+					// listen for hovering events
+					$('table.line')
+						.bind('vizualizeOver',function(e,data){
+							currentHoverPoint = data.point;
+							$(data.point.elem).parents('table').trigger('visualizeRedraw');
+						})
+						.bind('vizualizeOut',function(e,data){
+							currentHoverPoint = null;
+							$(data.point.elem).parents('table').trigger('visualizeRedraw');
+						});
+				
+					// Modify painting for hovering effect
+					$('table.line').bind('vizualizeBeforeDraw',function hoverBeforeDraw(e,data){
+						if(currentHoverPoint) {
+							var item,i,j,len = data.tableData.allItems.length;
+							for(i=0;i<len;i+=1) { item = data.tableData.allItems[i];
+								if(currentHoverPoint == item) {
+									item.innerColor = item.color;
+									// item.dotSize = item.dotSize*1.4;
+									// item.dotInnerSize = item.dotInnerSize*1.4;
+								}
+							}
+						}
+					});
+					
+				}
+				
+				
 			});
 		</script>
 	</head>
