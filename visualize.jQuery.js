@@ -43,181 +43,156 @@ $.fn.visualize = function(options, container){
 		
 		//function to scrape data from html table
 		function scrapeTable(){
+			var tableData = {};
 			var colors = o.colors;
-			var textColors = o.textColors;
-			var parseLabels = function(direction){
-				var labels = [];
-				if(direction == 'x'){
-					self.find('thead tr').each(function(i){
-						$(this).find('th').each(function(j){
-							if(!labels[j]) {
-								labels[j] = [];
-							}
-							labels[j][i] = $(this).text()
-						})
-					});
-				}
-				else {
-					self.find('tbody tr').each(function(i){
-						$(this).find('th').each(function(j) {
-							if(!labels[i]) {
-								labels[i] = [];
-							}
-							labels[i][j] = $(this).text()
-						});
-					});
-				}
-				return labels;
-			};
-			var tableData = {
-				dataGroups: function(){
-					var dataGroups = [];
-					if(o.parseDirection == 'x'){
-						self.find('tbody tr').each(function(i){
-							dataGroups[i] = {};
-							dataGroups[i].points = [];
-							dataGroups[i].color = colors[i];
-							if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
-							$(this).find('td').each(function(j){
-								dataGroups[i].points.push( {
-									value: parseFloat($(this).text()),
-									elem: this,
-									tableCords: [i,j]
-								} );
-							});
+				var textColors = o.textColors;
+				
+				
+				var parseLabels = function(direction){
+					var labels = [];
+					if(direction == 'x'){
+						self.find('thead tr').each(function(i){
+							$(this).find('th').each(function(j){
+								if(!labels[j]) {
+									labels[j] = [];
+								}
+								labels[j][i] = $(this).text()
+							})
 						});
 					}
 					else {
-						var cols = self.find('tbody tr:eq(0) td').size();
-						for(var i=0; i<cols; i++){
-							dataGroups[i] = {};
-							dataGroups[i].points = [];
-							dataGroups[i].color = colors[i];
-							if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
-							self.find('tbody tr').each(function(j){
-								dataGroups[i].points.push( {
-									value:  $(this).find('td').eq(i).text()*1,
-									elem: this,
-									tableCords: [i,j]
-								} );
+						self.find('tbody tr').each(function(i){
+							$(this).find('th').each(function(j) {
+								if(!labels[i]) {
+									labels[i] = [];
+								}
+								labels[i][j] = $(this).text()
 							});
-						};
+						});
 					}
-					return dataGroups;
-				},
-				allData: function(){
-					var allData = [];
-					$(this.dataGroups()).each(function(){
-						allData.push(this.points);
-					});
-					return allData;
-				},
-				allItems: function() {
-					var allItems = [];
-					$.each(allData,function(i,row){
-						$.each(row,function(j,item){
-							allItems.push(item)
+					return labels;
+				};
+				
+				
+				var dataGroups = tableData.dataGroups = [];
+				if(o.parseDirection == 'x'){
+					self.find('tbody tr').each(function(i,tr){
+						dataGroups[i] = {};
+						dataGroups[i].points = [];
+						dataGroups[i].color = colors[i];
+						if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
+						$(tr).find('td').each(function(j,td){
+							dataGroups[i].points.push( {
+								value: parseFloat($(td).text()),
+								elem: td,
+								tableCords: [i,j]
+							} );
 						});
 					});
-					return allItems;
-				},
-				dataSum: function(){
-					var dataSum = 0;
-					var allItems = this.allItems();
-					$.each(allItems,function(i,item){
-						dataSum += parseFloat(item.value);
+				} else {
+					var cols = self.find('tbody tr:eq(0) td').size();
+					for(var i=0; i<cols; i++){
+						dataGroups[i] = {};
+						dataGroups[i].points = [];
+						dataGroups[i].color = colors[i];
+						if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
+						self.find('tbody tr').each(function(j){
+							dataGroups[i].points.push( {
+								value:  $(this).find('td').eq(i).text()*1,
+								elem: this,
+								tableCords: [i,j]
+							} );
+						});
+					};
+				}
+				
+			
+				tableData.allData = [];
+				$(dataGroups).each(function(){
+					tableData.allData.push(this.points);
+				});
+				
+				var allItems = tableData.allItems = [];
+				$.each(tableData.allData,function(i,row){
+					$.each(row,function(j,item){
+						allItems.push(item);
 					});
-					return dataSum;
-				},	
-				topValue: function(){
-						var topValue = 0;
-						var allItems = this.allItems();
-						$.each(allItems,function(i,item){
-							if(parseFloat(item.value,10)>topValue) topValue = parseFloat(item.value,10);
-						});
-						return topValue;
-				},
-				bottomValue: function(){
-						var bottomValue = this.topValue();
-						var allItems = this.allItems();
-						$.each(allItems,function(i,item){
-							if(item.value<bottomValue) bottomValue = parseFloat(item.value);
-						});
-						return bottomValue;
-				},
-				memberTotals: function(){
-					var memberTotals = [];
-					var dataGroups = this.dataGroups();
+				});
+			
+				tableData.dataSum = 0;
+				$.each(allItems,function(i,item){
+					tableData.dataSum += parseFloat(item.value);
+				});
+				
+				tableData.topValue = 0;
+				$.each(allItems,function(i,item){
+					if(parseFloat(item.value,10)>tableData.topValue) {
+						tableData.topValue = parseFloat(item.value,10);
+					}
+				});
+				
+				tableData.bottomValue = tableData.topValue;
+				$.each(allItems,function(i,item){
+					if(item.value<tableData.bottomValue) {
+						tableData.bottomValue = parseFloat(item.value);	
+					}
+				});
+				
+				tableData.memberTotals = [];
+				$(dataGroups).each(function(i,row){
+					var count = 0;
+					$(row.points).each(function(m){
+						count +=row.points[m].value;
+					});
+					tableData.memberTotals.push(count);
+				});
+			
+				tableData.xAllLabels = parseLabels(o.parseDirection);
+				tableData.yAllLabels = parseLabels(o.parseDirection==='x'?'y':'x');
+			
+				tableData.xLabels = [];
+				$.each(tableData.xAllLabels,function(i,labels) {
+					tableData.xLabels.push(labels[0]);
+				});
+				
+				tableData.totalYRange= tableData.topValue - tableData.bottomValue;
+			
+				var yLabels = tableData.yLabels = [];
+				var numLabels = Math.round(o.height / 30);
+				var loopInterval = Math.round(tableData.totalYRange / Math.floor(numLabels)); //fix provided from lab
+				loopInterval = Math.max(loopInterval, 1);
+				for(var j=tableData.bottomValue; j<=tableData.topValue; j+=loopInterval){
+					yLabels.push(j); 
+				}
+				if(yLabels[yLabels.length-1] != tableData.topValue) {
+					yLabels.pop();
+					yLabels.push(tableData.topValue);
+				}
+			
+				var yTotals = tableData.yTotals = [];
+				var loopLength = tableData.xLabels.length;
+				for(var i = 0; i<loopLength; i++){
+					yTotals[i] =[];
+					var thisTotal = 0;
 					$(dataGroups).each(function(l){
-						var count = 0;
-						$(dataGroups[l].points).each(function(m){
-							count +=dataGroups[l].points[m].value;
-						});
-						memberTotals.push(count);
+						yTotals[i].push(this.points[i].value);
 					});
-					return memberTotals;
-				},
-				yTotals: function(){
-					var yTotals = [];
-					var dataGroups = this.dataGroups();
-					var loopLength = this.xLabels().length;
-					for(var i = 0; i<loopLength; i++){
-						yTotals[i] =[];
-						var thisTotal = 0;
-						$(dataGroups).each(function(l){
-							yTotals[i].push(this.points[i].value);
-						});
-						yTotals[i].join(',').split(',');
-						$(yTotals[i]).each(function(){
-							thisTotal += parseFloat(this);
-						});
-						yTotals[i] = thisTotal;
-						
-					}
-					return yTotals;
-				},
-				topYtotal: function(){
-					var topYtotal = 0;
-						var yTotals = this.yTotals().join(',').split(',');
-						$(yTotals).each(function(){
-							if(parseFloat(this,10)>topYtotal) topYtotal = parseFloat(this);
-						});
-						return topYtotal;
-				},
-				totalYRange: function(){
-					return this.topValue() - this.bottomValue();
-				},
-				xLabels: function() {
-					var ret = [];
-					$.each(this.xAllLabels(),function(i,labels) {
-						ret.push(labels[0]);
+					yTotals[i].join(',').split(',');
+					$(yTotals[i]).each(function(){
+						thisTotal += parseFloat(this);
 					});
-					return ret;
-				},
-				xAllLabels: function() {
-					return parseLabels(o.parseDirection);
-				},
-				yAllLabels: function() {
-					return parseLabels(o.parseDirection==='x'?'y':'x');
-				},
-				yLabels: function(){
-					var yLabels = [];
-					var chartHeight = o.height;
-					var numLabels = Math.round(chartHeight / 30);
-					//var totalRange = this.topValue() + Math.abs(this.bottomValue());
-					var loopInterval = Math.round(this.totalYRange() / Math.floor(numLabels)); //fix provided from lab
-					loopInterval = Math.max(loopInterval, 1);
-					for(var j=this.bottomValue(); j<=topValue; j+=loopInterval){
-						yLabels.push(j); 
+					yTotals[i] = thisTotal;
+					
+				}
+			
+			
+				tableData.topYtotal = 0;
+				$(yTotals).each(function(){
+					if(parseFloat(this,10)>tableData.topYtotal) {
+						tableData.topYtotal = parseFloat(this);
 					}
-					if(yLabels[yLabels.length-1] != this.topValue()) {
-						yLabels.pop();
-						yLabels.push(this.topValue());
-					}
-					return yLabels;
-				}			
-			};
-
+				});
+	
 			return tableData;
 		};
 		
@@ -628,18 +603,18 @@ $.fn.visualize = function(options, container){
 
 		//scrape table (this should be cleaned up into an obj)
 		var tableData = scrapeTable();
-		var dataGroups = tableData.dataGroups();
-		var allData = tableData.allData();
-		var dataSum = tableData.dataSum();
-		var topValue = tableData.topValue();
-		var bottomValue = tableData.bottomValue();
-		var memberTotals = tableData.memberTotals();
-		var totalYRange = tableData.totalYRange();
+		var dataGroups = tableData.dataGroups;
+		var allData = tableData.allData;
+		var dataSum = tableData.dataSum;
+		var topValue = tableData.topValue;
+		var bottomValue = tableData.bottomValue;
+		var memberTotals = tableData.memberTotals;
+		var totalYRange = tableData.totalYRange;
 		var zeroLoc = o.height * (topValue/totalYRange);
-		var xLabels = tableData.xLabels();
-		var yLabels = tableData.yLabels();
-		var yAllLabels = tableData.yAllLabels();
-		var xAllLabels = tableData.xAllLabels();
+		var xLabels = tableData.xLabels;
+		var yLabels = tableData.yLabels;
+		var yAllLabels = tableData.yAllLabels;
+		var xAllLabels = tableData.xAllLabels;
 								
 		//title/key container
 		if(o.appendTitle || o.appendKey){
