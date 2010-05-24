@@ -42,7 +42,7 @@ $.fn.visualize = function(options, container){
 		var self = $(this);
 		
 		// scrape data from html table
-		tableData = {};
+		var tableData = {};
 		var colors = o.colors;
 		var textColors = o.textColors;
 		
@@ -191,6 +191,7 @@ $.fn.visualize = function(options, container){
 			});
 		});
 		
+		try{console.log(tableData);}catch(e){}
 		
 		var charts = {};
 		
@@ -365,7 +366,7 @@ $.fn.visualize = function(options, container){
 						});
 					});
 					// fire custom event so we can enable rich interaction
-					self.trigger('vizualizeBeforeDraw',{options:o,table:self,canvasContain:canvasContain,dataGroups:dataGroups});
+					self.trigger('vizualizeBeforeDraw',{options:o,table:self,canvasContain:canvasContain,tableData:tableData});
 					// draw lines and areas
 					$.each(dataGroups,function(h){
 						// Draw lines
