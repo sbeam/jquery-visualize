@@ -41,155 +41,155 @@ $.fn.visualize = function(options, container){
 		
 		var self = $(this);
 		
-		//function to scrape data from html table
-		function scrapeTable(){
-			var tableData = {};
-			var colors = o.colors;
-			var textColors = o.textColors;
-			
-			
-			var parseLabels = function(direction){
-				var labels = [];
-				if(direction == 'x'){
-					self.find('thead tr').each(function(i){
-						$(this).find('th').each(function(j){
-							if(!labels[j]) {
-								labels[j] = [];
-							}
-							labels[j][i] = $(this).text()
-						})
-					});
-				}
-				else {
-					self.find('tbody tr').each(function(i){
-						$(this).find('th').each(function(j) {
-							if(!labels[i]) {
-								labels[i] = [];
-							}
-							labels[i][j] = $(this).text()
-						});
-					});
-				}
-				return labels;
-			};
-			
-			
-			var dataGroups = tableData.dataGroups = [];
-			if(o.parseDirection == 'x'){
-				self.find('tbody tr').each(function(i,tr){
-					dataGroups[i] = {};
-					dataGroups[i].points = [];
-					dataGroups[i].color = colors[i];
-					if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
-					$(tr).find('td').each(function(j,td){
-						dataGroups[i].points.push( {
-							value: parseFloat($(td).text()),
-							elem: td,
-							tableCords: [i,j]
-						} );
+		// scrape data from html table
+		tableData = {};
+		var colors = o.colors;
+		var textColors = o.textColors;
+		
+		
+		var parseLabels = function(direction){
+			var labels = [];
+			if(direction == 'x'){
+				self.find('thead tr').each(function(i){
+					$(this).find('th').each(function(j){
+						if(!labels[j]) {
+							labels[j] = [];
+						}
+						labels[j][i] = $(this).text()
+					})
+				});
+			}
+			else {
+				self.find('tbody tr').each(function(i){
+					$(this).find('th').each(function(j) {
+						if(!labels[i]) {
+							labels[i] = [];
+						}
+						labels[i][j] = $(this).text()
 					});
 				});
-			} else {
-				var cols = self.find('tbody tr:eq(0) td').size();
-				for(var i=0; i<cols; i++){
-					dataGroups[i] = {};
-					dataGroups[i].points = [];
-					dataGroups[i].color = colors[i];
-					if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
-					self.find('tbody tr').each(function(j){
-						dataGroups[i].points.push( {
-							value:  $(this).find('td').eq(i).text()*1,
-							elem: this,
-							tableCords: [i,j]
-						} );
-					});
-				};
 			}
-			
-		
-			var allItems = tableData.allItems = [];
-			$(dataGroups).each(function(i,row){
-				var count = 0;
-				$.each(row.points,function(j,point){
-					allItems.push(point);
-					count += point.value;
-				});
-				row.groupTotal = count;
-			});
-			
-			tableData.dataSum = 0;
-			tableData.topValue = 0;
-			tableData.bottomValue = Infinity;
-			$.each(allItems,function(i,item){
-				tableData.dataSum += parseFloat(item.value);
-				if(parseFloat(item.value,10)>tableData.topValue) {
-					tableData.topValue = parseFloat(item.value,10);
-				}
-				if(item.value<tableData.bottomValue) {
-					tableData.bottomValue = parseFloat(item.value);	
-				}
-			});
-			
-			tableData.xAllLabels = parseLabels(o.parseDirection);
-			tableData.yAllLabels = parseLabels(o.parseDirection==='x'?'y':'x');
-		
-			tableData.xLabels = [];
-			$.each(tableData.xAllLabels,function(i,labels) {
-				tableData.xLabels.push(labels[0]);
-			});
-			
-			tableData.totalYRange= tableData.topValue - tableData.bottomValue;
-		
-			var yLabels = tableData.yLabels = [];
-			var numLabels = Math.round(o.height / 30);
-			var loopInterval = Math.round(tableData.totalYRange / Math.floor(numLabels)); //fix provided from lab
-			loopInterval = Math.max(loopInterval, 1);
-			for(var j=tableData.bottomValue; j<=tableData.topValue; j+=loopInterval){
-				yLabels.push(j); 
-			}
-			if(yLabels[yLabels.length-1] != tableData.topValue) {
-				yLabels.pop();
-				yLabels.push(tableData.topValue);
-			}
-		
-			var yTotals = tableData.yTotals = [];
-			var loopLength = tableData.xLabels.length;
-			for(var i = 0; i<loopLength; i++){
-				yTotals[i] =[];
-				var thisTotal = 0;
-				$(dataGroups).each(function(l){
-					yTotals[i].push(this.points[i].value);
-				});
-				yTotals[i].join(',').split(',');
-				$(yTotals[i]).each(function(){
-					thisTotal += parseFloat(this);
-				});
-				yTotals[i] = thisTotal;
-				
-			}
-		
-		
-			tableData.topYtotal = 0;
-			$(yTotals).each(function(){
-				if(parseFloat(this,10)>tableData.topYtotal) {
-					tableData.topYtotal = parseFloat(this);
-				}
-			});
-			
-			tableData.zeroLoc = o.height * (tableData.topValue/tableData.totalYRange);
-			
-			// populate some data
-			$.each(dataGroups,function(i,row){
-				$.each(row.points, function(j,point){
-					point.offset = tableData.zeroLoc;
-					point.xLabels = tableData.xAllLabels[j];
-					point.yLabels = tableData.yAllLabels[i];
-					point.color = row.color;
-				});
-			});
-
-			return tableData;
+			return labels;
 		};
+		
+		
+		var dataGroups = tableData.dataGroups = [];
+		if(o.parseDirection == 'x'){
+			self.find('tbody tr').each(function(i,tr){
+				dataGroups[i] = {};
+				dataGroups[i].points = [];
+				dataGroups[i].color = colors[i];
+				if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
+				$(tr).find('td').each(function(j,td){
+					dataGroups[i].points.push( {
+						value: parseFloat($(td).text()),
+						elem: td,
+						tableCords: [i,j]
+					} );
+				});
+			});
+		} else {
+			var cols = self.find('tbody tr:eq(0) td').size();
+			for(var i=0; i<cols; i++){
+				dataGroups[i] = {};
+				dataGroups[i].points = [];
+				dataGroups[i].color = colors[i];
+				if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
+				self.find('tbody tr').each(function(j){
+					dataGroups[i].points.push( {
+						value:  $(this).find('td').eq(i).text()*1,
+						elem: this,
+						tableCords: [i,j]
+					} );
+				});
+			};
+		}
+		
+	
+		var allItems = tableData.allItems = [];
+		$(dataGroups).each(function(i,row){
+			var count = 0;
+			$.each(row.points,function(j,point){
+				allItems.push(point);
+				count += point.value;
+			});
+			row.groupTotal = count;
+		});
+		
+		tableData.dataSum = 0;
+		tableData.topValue = 0;
+		tableData.bottomValue = Infinity;
+		$.each(allItems,function(i,item){
+			tableData.dataSum += parseFloat(item.value);
+			if(parseFloat(item.value,10)>tableData.topValue) {
+				tableData.topValue = parseFloat(item.value,10);
+			}
+			if(item.value<tableData.bottomValue) {
+				tableData.bottomValue = parseFloat(item.value);	
+			}
+		});
+		var dataSum = tableData.dataSum;
+		var topValue = tableData.topValue;
+		var bottomValue = tableData.bottomValue;
+		
+		var xAllLabels = tableData.xAllLabels = parseLabels(o.parseDirection);
+		var yAllLabels = tableData.yAllLabels = parseLabels(o.parseDirection==='x'?'y':'x');
+	
+		var xLabels = tableData.xLabels = [];
+		$.each(tableData.xAllLabels,function(i,labels) {
+			tableData.xLabels.push(labels[0]);
+		});
+		
+		var totalYRange = tableData.totalYRange= tableData.topValue - tableData.bottomValue;
+	
+		var yLabels = tableData.yLabels = [];
+		var numLabels = Math.round(o.height / 30);
+		var loopInterval = Math.round(tableData.totalYRange / Math.floor(numLabels)); //fix provided from lab
+		loopInterval = Math.max(loopInterval, 1);
+		for(var j=tableData.bottomValue; j<=tableData.topValue; j+=loopInterval){
+			yLabels.push(j); 
+		}
+		if(yLabels[yLabels.length-1] != tableData.topValue) {
+			yLabels.pop();
+			yLabels.push(tableData.topValue);
+		}
+	
+		var yTotals = tableData.yTotals = [];
+		var loopLength = tableData.xLabels.length;
+		for(var i = 0; i<loopLength; i++){
+			yTotals[i] =[];
+			var thisTotal = 0;
+			$(dataGroups).each(function(l){
+				yTotals[i].push(this.points[i].value);
+			});
+			yTotals[i].join(',').split(',');
+			$(yTotals[i]).each(function(){
+				thisTotal += parseFloat(this);
+			});
+			yTotals[i] = thisTotal;
+			
+		}
+	
+	
+		tableData.topYtotal = 0;
+		$(yTotals).each(function(){
+			if(parseFloat(this,10)>tableData.topYtotal) {
+				tableData.topYtotal = parseFloat(this);
+			}
+		});
+		
+		var zeroLoc = tableData.zeroLoc = o.height * (tableData.topValue/tableData.totalYRange);
+		
+		// populate some data
+		$.each(dataGroups,function(i,row){
+			row.yLabels = tableData.yAllLabels[i];
+			$.each(row.points, function(j,point){
+				point.offset = tableData.zeroLoc;
+				point.xLabels = tableData.xAllLabels[j];
+				point.yLabels = tableData.yAllLabels[i];
+				point.color = row.color;
+			});
+		});
 		
 		
 		var charts = {};
@@ -590,21 +590,6 @@ $.fn.visualize = function(options, container){
 			.width(o.width)
 			.append(canvas);
 
-
-		//scrape table (this should be cleaned up into an obj)
-		var tableData = scrapeTable();
-		var dataGroups = tableData.dataGroups;
-		var dataSum = tableData.dataSum;
-		var topValue = tableData.topValue;
-		var bottomValue = tableData.bottomValue;
-		var memberTotals = tableData.memberTotals;
-		var totalYRange = tableData.totalYRange;
-		var xLabels = tableData.xLabels;
-		var yLabels = tableData.yLabels;
-		var yAllLabels = tableData.yAllLabels;
-		var xAllLabels = tableData.xAllLabels;
-		var zeroLoc = tableData.zeroLoc;
-								
 		//title/key container
 		if(o.appendTitle || o.appendKey){
 			var infoContain = $('<div class="visualize-info"></div>')
