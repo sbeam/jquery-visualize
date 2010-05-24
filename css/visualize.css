@@ -30,3 +30,7 @@
 .visualize-labels-y li span.label { right: 100%; margin-right: 5px; display: block; width: 100px; text-align: right; }
 .visualize-labels-y li span.line { border-top-width: 1px; width: 100%; }
 .visualize-bar .visualize-labels-x li span.label { width: 100%; text-align: center; }
+
+/* tooltip */
+.visualize-tooltip {background:#fff;padding:3px;border:1px solid black;}
+.visualize-tooltip p {margin:0;}
