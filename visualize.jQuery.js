@@ -636,12 +636,11 @@ $.fn.visualize = function(options, container){
 				})
 				.appendTo(canvasContain);
 
-			var triggerInteraction = function(overOut,point) {
-				var data = {
-					point:point,
+			var triggerInteraction = function(overOut,data) {
+				var data = $.extend({
 					canvasContain:canvasContain,
 					tableData:tableData
-				};
+				},data);
 				self.trigger('vizualize'+overOut,data);
 			};
 
@@ -670,20 +669,23 @@ $.fn.visualize = function(options, container){
 				if(over != last) {
 					if(over) {
 						if(last) {
-							triggerInteraction('Out',last);
+							triggerInteraction('Out',{point:last});
 						}
-						triggerInteraction('Over',over);
+						triggerInteraction('Over',{point:over});
 						last = over;
 					}
 					if(last && !over) {
-						triggerInteraction('Out',last);
+						triggerInteraction('Out',{point:last});
 						last=false;
 					}
 					started=true;
 				}
 			});
 			tracker.mouseleave(function(){
-				triggerInteraction('Out',{point:last,mouseOutGraph:true});
+				triggerInteraction('Out',{
+					point:last,
+					mouseOutGraph:true
+				});
 				over = (last = false);
 			});
 		}
