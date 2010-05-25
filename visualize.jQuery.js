@@ -29,6 +29,8 @@ $.fn.visualize = function(options, container){
 			lineDots: false, //also available: 'single', 'double'
 			dotInnerColor: "#ffffff", // only used for lineDots:'double'
 			barGroupMargin: 10,
+			chartId: '',
+			chartClass: '',
 			barMargin: 1, //space around bars in bar chart (added to both sides of bar)
 			yLabelInterval: 30, //distance between y labels
 			interaction: false // only used for lineDots != false -- triggers mouseover and mouseout on original table
@@ -595,7 +597,7 @@ $.fn.visualize = function(options, container){
 		var title = o.title || self.find('caption').text();
 		
 		//create canvas wrapper div, set inline w&h, append
-		var canvasContain = (container || $('<div class="visualize" role="img" aria-label="Chart representing data from the table: '+ title +'" />'))
+		var canvasContain = (container || $('<div '+(o.chartId?'id="'+o.chartId+'" ':'')+'class="visualize '+o.chartClass+'" role="img" aria-label="Chart representing data from the table: '+ title +'" />'))
 			.height(o.height)
 			.width(o.width)
 			.append(canvas);
