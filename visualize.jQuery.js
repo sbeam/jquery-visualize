@@ -31,6 +31,8 @@ $.fn.visualize = function(options, container){
 			lineMargin: (options.lineDots?15:0), //for line and area - spacing around lines
 			barGroupMargin: 10,
 			chartId: '',
+			xLabelParser: null, // function to parse labels as values
+			chartId: '',
 			chartClass: '',
 			barMargin: 1, //space around bars in bar chart (added to both sides of bar)
 			yLabelInterval: 30, //distance between y labels
@@ -149,6 +151,45 @@ $.fn.visualize = function(options, container){
 		
 		var totalYRange = tableData.totalYRange = tableData.topValue - tableData.bottomValue;
 		
+		var zeroLocX = 0;
+		
+		if($.isFunction(o.xLabelParser)) {
+			
+			var xTopValue = null;
+			var xBottomValue = null;
+
+			$.each(xLabels,function(i,label) {
+				label = xLabels[i] = o.xLabelParser(label);
+				if(i === 0) {
+					xTopValue = label;
+					xBottomValue = label;
+				}
+				if(label>xTopValue) {
+					xTopValue = label;
+				}
+				if(label<xBottomValue) {
+					xBottomValue = label;
+				}
+			});
+
+			var totalXRange = tableData.totalXRange = xTopValue - xBottomValue;
+
+			
+			var	xScale = tableData.xScale = (o.width -2*o.lineMargin) / totalXRange;
+			var marginDiffX = 0;
+			if(o.lineMargin) {
+				var marginDiffX = -2*xScale-o.lineMargin;
+			}
+			zeroLocX = tableData.zeroLocX = xBottomValue + o.lineMargin;
+			
+			tableData.xBottomValue = xBottomValue;
+			tableData.xTopValue = xTopValue;
+			tableData.totalXRange = totalXRange;
+		}
+		
+		// if($.isFunction(o.xLabelsMap)) {
+		// 	xLabels = o.xLabelsMap(xLabels);
+		// }
 		
 		var yLabels = tableData.yLabels = [];
 
@@ -192,13 +233,14 @@ $.fn.visualize = function(options, container){
 		if(o.lineMargin) {
 			var marginDiff = -yScale-o.lineMargin;
 		}
-		var zeroLoc = tableData.zeroLoc = o.height * (tableData.topValue/tableData.totalYRange) + marginDiff;
+		var zeroLocY = tableData.zeroLocY = o.height * (tableData.topValue/tableData.totalYRange) + marginDiff;
 		
 		// populate some data
 		$.each(dataGroups,function(i,row){
 			row.yLabels = tableData.yAllLabels[i];
 			$.each(row.points, function(j,point){
-				point.offset = tableData.zeroLoc;
+				point.zeroLocY = tableData.zeroLocY;
+				point.zeroLocX = tableData.zeroLocX;
 				point.xLabels = tableData.xAllLabels[j];
 				point.yLabels = tableData.yAllLabels[i];
 				point.color = row.color;
@@ -260,7 +302,7 @@ $.fn.visualize = function(options, container){
 
 						// interaction variables
 						row.canvasCords = [labelx,labely];
-						row.offset = 0; // related to zeroLoc and plugin API
+						row.offset = 0; // related to zeroLocY and plugin API
 						row.value = row.groupTotal;
 
 
@@ -311,25 +353,29 @@ $.fn.visualize = function(options, container){
 					else{ canvasContain.addClass('visualize-line'); }
 
 					//write X labels
-					xInterval = (canvas.width() - 2*o.lineMargin) / (xLabels.length -1);
 					var xlabelsUL = $('<ul class="visualize-labels-x"></ul>')
 						.width(canvas.width())
 						.height(canvas.height())
 						.insertBefore(canvas);
 
-					$.each(xLabels, function(i){ 
-						var thisLi = $('<li><span>'+this+'</span></li>')
-							.prepend('<span class="line" />')
-							.css('left', o.lineMargin + xInterval * i)
-							.appendTo(xlabelsUL);						
-						var label = thisLi.find('span:not(.line)');
-						var leftOffset = label.width()/-2;
-						if(i == 0){ leftOffset = 0; }
-						else if(i== xLabels.length-1){ leftOffset = -label.width(); }
-						label
-							.css('margin-left', leftOffset)
-							.addClass('label');
-					});
+					if(!o.customXLabels) {
+						xInterval = (canvas.width() - 2*o.lineMargin) / (xLabels.length -1);
+						$.each(xLabels, function(i){ 
+							var thisLi = $('<li><span>'+this+'</span></li>')
+								.prepend('<span class="line" />')
+								.css('left', o.lineMargin + xInterval * i)
+								.appendTo(xlabelsUL);						
+							var label = thisLi.find('span:not(.line)');
+							var leftOffset = label.width()/-2;
+							if(i == 0){ leftOffset = 0; }
+							else if(i== xLabels.length-1){ leftOffset = -label.width(); }
+							label
+								.css('margin-left', leftOffset)
+								.addClass('label');
+						});
+					} else {
+						o.customXLabels(tableData,xlabelsUL);
+					}
 
 					//write Y labels
 					var liBottom = (canvas.height() - 2*o.lineMargin) / (yLabels.length-1);
@@ -356,7 +402,7 @@ $.fn.visualize = function(options, container){
 					});
 					
 					//start from the bottom left
-					ctx.translate(0,zeroLoc);
+					ctx.translate(zeroLocX,zeroLocY);
 					
 					charts.line.draw(area);
 
@@ -364,13 +410,13 @@ $.fn.visualize = function(options, container){
 				
 				draw: function(area) {
 					// prevent drawing on top of previous draw
-					ctx.clearRect(0,-zeroLoc,o.width,o.height);
+					ctx.clearRect(-zeroLocX,-zeroLocY,o.width,o.height);
 					// Calculate each point properties before hand
 					var integer;
 					$.each(dataGroups,function(i,row){
 						integer = o.lineMargin; // the current offset
 						$.each(row.points, function(j,point){
-							point.canvasCords = [integer,-(point.value*yScale)];
+							point.canvasCords = [(xLabels[j]-zeroLocX)*xScale - xBottomValue,-(point.value*yScale)];
 							if(o.lineDots) {
 								point.dotSize = o.dotSize||o.lineWeight*Math.PI;
 								point.dotInnerSize = o.dotInnerSize||o.lineWeight*Math.PI/2;
@@ -558,7 +604,7 @@ $.fn.visualize = function(options, container){
 					}
 					else {
 						// for vertical, translate to the top left corner.
-						ctx.translate(0, zeroLoc);
+						ctx.translate(0, zeroLocY);
 					}
 
 					// Don't attempt to draw anything if all the values are zero,
@@ -672,8 +718,8 @@ $.fn.visualize = function(options, container){
 				minDist = started?30000:(o.type=='pie'?(Math.round(canvas.height()/2)-o.pieMargin)/3:o.lineWeight*4);
 				// iterate datagroups to find points with matching
 				$.each(charts[o.type].interactionPoints,function(i,current){
-					x1 = current.canvasCords[0];
-					y1 = current.canvasCords[1] + (o.type=="pie"?0:zeroLoc);
+					x1 = current.canvasCords[0] + zeroLocX;
+					y1 = current.canvasCords[1] + (o.type=="pie"?0:zeroLocY);
 					dist = Math.sqrt( (x1 - x)*(x1 - x) + (y1 - y)*(y1 - y) );
 					if(dist < minDist) {
 						found = current;
