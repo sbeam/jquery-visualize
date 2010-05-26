@@ -22,12 +22,13 @@ $.fn.visualize = function(options, container){
 			colors: ['#be1e2d','#666699','#92d5ea','#ee8310','#8d10ee','#5a3b16','#26a4ed','#f45a90','#e9e744'],
 			textColors: [], //corresponds with colors array. null/undefined items will fall back to CSS
 			parseDirection: 'x', //which direction to parse the table data
-			pieMargin: 20, //pie charts only - spacing around pie
+			pieMargin: 10, //pie charts only - spacing around pie
 			pieLabelsAsPercent: true,
 			pieLabelPos: 'inside',
 			lineWeight: 4, //for line and area - stroke weight
 			lineDots: false, //also available: 'single', 'double'
 			dotInnerColor: "#ffffff", // only used for lineDots:'double'
+			lineMargin: (options.lineDots?15:0), //for line and area - spacing around lines
 			barGroupMargin: 10,
 			chartId: '',
 			chartClass: '',
@@ -40,6 +41,10 @@ $.fn.visualize = function(options, container){
 		o.width = parseFloat(o.width);
 		o.height = parseFloat(o.height);
 		
+		// reset padding if graph is not lines
+		if(o.type != 'line' && o.type != 'area' ) {
+			o.lineMargin = 0;
+		}
 		
 		var self = $(this);
 		
@@ -142,10 +147,12 @@ $.fn.visualize = function(options, container){
 			tableData.xLabels.push(labels[0]);
 		});
 		
-		var totalYRange = tableData.totalYRange= tableData.topValue - tableData.bottomValue;
-	
+		var totalYRange = tableData.totalYRange = tableData.topValue - tableData.bottomValue;
+		
+		
 		var yLabels = tableData.yLabels = [];
-		var numLabels = Math.round(o.height / 30);
+
+		var numLabels = Math.round((o.height - 2*o.lineMargin) / 30);
 		var loopInterval = Math.round(tableData.totalYRange / Math.floor(numLabels)); //fix provided from lab
 		loopInterval = Math.max(loopInterval, 1);
 		for(var j=tableData.bottomValue; j<=tableData.topValue; j+=loopInterval){
@@ -180,7 +187,12 @@ $.fn.visualize = function(options, container){
 			}
 		});
 		
-		var zeroLoc = tableData.zeroLoc = o.height * (tableData.topValue/tableData.totalYRange);
+		var	yScale = tableData.yScale = (o.height - 2*o.lineMargin) / totalYRange;
+		var marginDiff = 0;
+		if(o.lineMargin) {
+			var marginDiff = -2*yScale-o.lineMargin
+		}
+		var zeroLoc = tableData.zeroLoc = o.height * (tableData.topValue/tableData.totalYRange) + marginDiff;
 		
 		// populate some data
 		$.each(dataGroups,function(i,row){
@@ -278,7 +290,7 @@ $.fn.visualize = function(options, container){
 		
 		(function(){
 			
-			var yScale,xInterval;
+			var xInterval;
 
 			var drawPoint = function (ctx,x,y,color,size) {
 				ctx.moveTo(x,y);
@@ -299,7 +311,7 @@ $.fn.visualize = function(options, container){
 					else{ canvasContain.addClass('visualize-line'); }
 
 					//write X labels
-					xInterval = canvas.width() / (xLabels.length -1);
+					xInterval = (canvas.width() - 2*o.lineMargin) / (xLabels.length -1);
 					var xlabelsUL = $('<ul class="visualize-labels-x"></ul>')
 						.width(canvas.width())
 						.height(canvas.height())
@@ -308,7 +320,7 @@ $.fn.visualize = function(options, container){
 					$.each(xLabels, function(i){ 
 						var thisLi = $('<li><span>'+this+'</span></li>')
 							.prepend('<span class="line" />')
-							.css('left', xInterval * i)
+							.css('left', o.lineMargin + xInterval * i)
 							.appendTo(xlabelsUL);						
 						var label = thisLi.find('span:not(.line)');
 						var leftOffset = label.width()/-2;
@@ -320,22 +332,24 @@ $.fn.visualize = function(options, container){
 					});
 
 					//write Y labels
-					yScale = canvas.height() / totalYRange;
-					var liBottom = canvas.height() / (yLabels.length-1);
+					var liBottom = (canvas.height() - 2*o.lineMargin) / (yLabels.length-1);
 					var ylabelsUL = $('<ul class="visualize-labels-y"></ul>')
 						.width(canvas.width())
 						.height(canvas.height())
+						.css('margin-top',-o.lineMargin)
 						.insertBefore(canvas);
 
 					$.each(yLabels, function(i){  
 						var thisLi = $('<li><span>'+Math.round(this*100)/100+'</span></li>')
 							.prepend('<span class="line"  />')
-							.css('bottom',liBottom*i)
+							.css('bottom', liBottom*i)
 							.prependTo(ylabelsUL);
 						var label = thisLi.find('span:not(.line)');
 						var topOffset = label.height()/-2;
-						if(i == 0){ topOffset = -label.height(); }
-						else if(i== yLabels.length-1){ topOffset = 0; }
+						if(!o.lineMargin) {
+							if(i == 0){ topOffset = -label.height(); }
+							else if(i== yLabels.length-1){ topOffset = 0; }
+						}
 						label
 							.css('margin-top', topOffset)
 							.addClass('label');
@@ -352,9 +366,9 @@ $.fn.visualize = function(options, container){
 					// prevent drawing on top of previous draw
 					ctx.clearRect(0,-zeroLoc,o.width,o.height);
 					// Calculate each point properties before hand
-					var integer=0;
+					var integer;
 					$.each(dataGroups,function(i,row){
-						var integer = 0; // the current offset
+						integer = o.lineMargin; // the current offset
 						$.each(row.points, function(j,point){
 							point.canvasCords = [integer,-(point.value*yScale)];
 							if(o.lineDots) {
@@ -389,7 +403,7 @@ $.fn.visualize = function(options, container){
 							var integer = this.points[this.points.length-1].canvasCords[0];
 							if (isFinite(integer))
 								ctx.lineTo(integer,0);
-							ctx.lineTo(0,0);
+							ctx.lineTo(o.lineMargin,0);
 							ctx.closePath();
 							ctx.fillStyle = this.color;
 							ctx.globalAlpha = .3;
@@ -708,7 +722,11 @@ $.fn.visualize = function(options, container){
 		charts[o.type].setup();
 		
 		//clean up some doubled lines that sit on top of canvas borders (done via JS due to IE)
-		$('.visualize-line li:first-child span.line, .visualize-line li:last-child span.line, .visualize-area li:first-child span.line, .visualize-area li:last-child span.line, .visualize-bar li:first-child span.line,.visualize-bar .visualize-labels-y li:last-child span.line').css('border','none');
+		if(!o.lineMargin) {
+			$('.visualize-line li:first-child span.line, .visualize-line li:last-child span.line, .visualize-area li:first-child span.line, .visualize-area li:last-child span.line, .visualize-bar li:first-child span.line,.visualize-bar .visualize-labels-y li:last-child span.line').css('border','none');
+		}
+		
+		
 		if(!container){
 			//add event for updating
 			self.bind('visualizeRefresh', function(){
