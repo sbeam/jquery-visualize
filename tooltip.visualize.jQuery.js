@@ -51,7 +51,7 @@
 		
 		self.bind('vizualizeOver',function visualizeTooltipOver(e,data){
 			if(data.canvasContain.get(0) != canvasContain.get(0)) {return;} // for multiple graphs originated from same table
-			var left,right,top,clasRem,clasAd,bottom,x=Math.ceil(data.point.canvasCords[0]),y=Math.ceil(data.point.canvasCords[1]+data.point.offset);
+			var left,right,top,clasRem,clasAd,bottom,x=Math.round(data.point.canvasCords[0]),y=Math.round(data.point.canvasCords[1]+data.point.offset);
 			if(o.tooltipalign == 'left' || ( o.tooltipalign=='auto' && x<=o.width/2 ) ) {
 				left = x+'px';
 				right = '';
