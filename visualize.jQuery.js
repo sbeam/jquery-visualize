@@ -190,7 +190,7 @@ $.fn.visualize = function(options, container){
 		var	yScale = tableData.yScale = (o.height - 2*o.lineMargin) / totalYRange;
 		var marginDiff = 0;
 		if(o.lineMargin) {
-			var marginDiff = -2*yScale-o.lineMargin;
+			var marginDiff = -yScale-o.lineMargin;
 		}
 		var zeroLoc = tableData.zeroLoc = o.height * (tableData.topValue/tableData.totalYRange) + marginDiff;
 		
