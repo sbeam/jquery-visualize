@@ -151,7 +151,7 @@ $.fn.visualize = function(options, container){
 		
 		var totalYRange = tableData.totalYRange = tableData.topValue - tableData.bottomValue;
 		
-		var zeroLocX = 0;
+		var zeroLocX = tableData.zeroLocX = 0;
 		
 		if($.isFunction(o.xLabelParser)) {
 			
@@ -302,7 +302,8 @@ $.fn.visualize = function(options, container){
 
 						// interaction variables
 						row.canvasCords = [labelx,labely];
-						row.offset = 0; // related to zeroLocY and plugin API
+						row.zeroLocY = 0; // related to zeroLocY and plugin API
+						row.zeroLocX = 0; // related to zeroLocY and plugin API
 						row.value = row.groupTotal;
 
 
@@ -385,8 +386,9 @@ $.fn.visualize = function(options, container){
 						.css('margin-top',-o.lineMargin)
 						.insertBefore(canvas);
 
-					$.each(yLabels, function(i){  
-						var thisLi = $('<li><span>'+Math.round(this*100)/100+'</span></li>')
+					$.each(yLabels, function(i){
+						var value = Math.round(this);
+						var thisLi = $('<li><span>'+value+'</span></li>')
 							.prepend('<span class="line"  />')
 							.css('bottom', liBottom*i)
 							.prependTo(ylabelsUL);
@@ -416,7 +418,12 @@ $.fn.visualize = function(options, container){
 					$.each(dataGroups,function(i,row){
 						integer = o.lineMargin; // the current offset
 						$.each(row.points, function(j,point){
-							point.canvasCords = [(xLabels[j]-zeroLocX)*xScale - xBottomValue,-(point.value*yScale)];
+							if(o.xLabelParser) {
+								point.canvasCords = [(xLabels[j]-zeroLocX)*xScale - xBottomValue,-(point.value*yScale)];
+							} else {
+								point.canvasCords = [integer,-(point.value*yScale)];
+							}
+							
 							if(o.lineDots) {
 								point.dotSize = o.dotSize||o.lineWeight*Math.PI;
 								point.dotInnerSize = o.dotInnerSize||o.lineWeight*Math.PI/2;
