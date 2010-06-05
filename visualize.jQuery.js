@@ -193,19 +193,19 @@ $.fn.visualize = function(options, container){
 		
 		var yLabels = tableData.yLabels = [];
 
-		var numLabels = Math.round((o.height - 2*o.lineMargin) / 30);
-		var loopInterval = Math.round(tableData.totalYRange / Math.floor(numLabels)); //fix provided from lab
+		var numLabels = Math.floor((o.height - 2*o.lineMargin) / 30);
+		var loopInterval = tableData.totalYRange / numLabels; //fix provided from lab
 		loopInterval = Math.max(loopInterval, 1);
 		for(var j=tableData.bottomValue; j<=tableData.topValue; j+=loopInterval){
 			yLabels.push(j); 
 		}
-		if(yLabels[yLabels.length-1] != tableData.topValue) {
+		if(yLabels[yLabels.length-1] > tableData.topValue) {
 			yLabels.pop();
-			yLabels.push(tableData.topValue);
+			// yLabels.push(tableData.topValue);
 		}
 	
 		var yTotals = tableData.yTotals = [];
-		var loopLength = tableData.xLabels.length;
+		var loopLength = tableData.xAllLabels.length;
 		for(var i = 0; i<loopLength; i++){
 			yTotals[i] =[];
 			var thisTotal = 0;
@@ -219,8 +219,8 @@ $.fn.visualize = function(options, container){
 			yTotals[i] = thisTotal;
 			
 		}
-	
-	
+			
+			
 		tableData.topYtotal = 0;
 		$(yTotals).each(function(){
 			if(parseFloat(this,10)>tableData.topYtotal) {
@@ -233,7 +233,7 @@ $.fn.visualize = function(options, container){
 		if(o.lineMargin) {
 			var marginDiff = -yScale-o.lineMargin;
 		}
-		var zeroLocY = tableData.zeroLocY = o.height * (tableData.topValue/tableData.totalYRange) + marginDiff;
+		var zeroLocY = tableData.zeroLocY = (o.height-2*o.lineMargin) * (tableData.topValue/tableData.totalYRange) + o.lineMargin;
 		
 		// populate some data
 		$.each(dataGroups,function(i,row){
@@ -383,14 +383,14 @@ $.fn.visualize = function(options, container){
 					var ylabelsUL = $('<ul class="visualize-labels-y"></ul>')
 						.width(canvas.width())
 						.height(canvas.height())
-						.css('margin-top',-o.lineMargin)
+						// .css('margin-top',-o.lineMargin)
 						.insertBefore(canvas);
 
 					$.each(yLabels, function(i){
 						var value = Math.round(this);
 						var thisLi = $('<li><span>'+value+'</span></li>')
 							.prepend('<span class="line"  />')
-							.css('bottom', liBottom*i)
+							.css('bottom', (value-bottomValue)*yScale + o.lineMargin)
 							.prependTo(ylabelsUL);
 						var label = thisLi.find('span:not(.line)');
 						var topOffset = label.height()/-2;
@@ -776,7 +776,7 @@ $.fn.visualize = function(options, container){
 		
 		//clean up some doubled lines that sit on top of canvas borders (done via JS due to IE)
 		if(!o.lineMargin) {
-			$('.visualize-line li:first-child span.line, .visualize-line li:last-child span.line, .visualize-area li:first-child span.line, .visualize-area li:last-child span.line, .visualize-bar li:first-child span.line,.visualize-bar .visualize-labels-y li:last-child span.line').css('border','none');
+			// $('.visualize-line li:first-child span.line, .visualize-line li:last-child span.line, .visualize-area li:first-child span.line, .visualize-area li:last-child span.line, .visualize-bar li:first-child span.line,.visualize-bar .visualize-labels-y li:last-child span.line').css('border','none');
 		}
 		
 		
