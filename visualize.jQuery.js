@@ -203,31 +203,7 @@ $.fn.visualize = function(options, container){
 			yLabels.pop();
 			// yLabels.push(tableData.topValue);
 		}
-	
-		var yTotals = tableData.yTotals = [];
-		var loopLength = tableData.xAllLabels.length;
-		for(var i = 0; i<loopLength; i++){
-			yTotals[i] =[];
-			var thisTotal = 0;
-			$(dataGroups).each(function(l){
-				yTotals[i].push(this.points[i].value);
-			});
-			yTotals[i].join(',').split(',');
-			$(yTotals[i]).each(function(){
-				thisTotal += parseFloat(this);
-			});
-			yTotals[i] = thisTotal;
-			
-		}
-			
-			
-		tableData.topYtotal = 0;
-		$(yTotals).each(function(){
-			if(parseFloat(this,10)>tableData.topYtotal) {
-				tableData.topYtotal = parseFloat(this);
-			}
-		});
-		
+				
 		var	yScale = tableData.yScale = (o.height - 2*o.lineMargin) / totalYRange;
 		var marginDiff = 0;
 		if(o.lineMargin) {
