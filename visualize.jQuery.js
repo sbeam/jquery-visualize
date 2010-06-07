@@ -187,10 +187,6 @@ $.fn.visualize = function(options, container){
 			tableData.totalXRange = totalXRange;
 		}
 		
-		// if($.isFunction(o.xLabelsMap)) {
-		// 	xLabels = o.xLabelsMap(xLabels);
-		// }
-		
 		var yLabels = tableData.yLabels = [];
 
 		var numLabels = Math.floor((o.height - 2*o.lineMargin) / 30);
@@ -201,7 +197,8 @@ $.fn.visualize = function(options, container){
 		}
 		if(yLabels[yLabels.length-1] > tableData.topValue) {
 			yLabels.pop();
-			// yLabels.push(tableData.topValue);
+		} else if (yLabels[yLabels.length-1] <= tableData.topValue-10) {
+			yLabels.push(tableData.topValue);
 		}
 				
 		var	yScale = tableData.yScale = (o.height - 2*o.lineMargin) / totalYRange;
@@ -739,7 +736,7 @@ $.fn.visualize = function(options, container){
 		if(!container){canvasContain.insertAfter(this); }
 		if( typeof(G_vmlCanvasManager) != 'undefined' ){ G_vmlCanvasManager.init(); G_vmlCanvasManager.initElement(canvas[0]); }	
 		
-		//set up the drawing board	
+		//set up the drawing board
 		var ctx = canvas[0].getContext('2d');
 
 		// init plugins
@@ -751,8 +748,8 @@ $.fn.visualize = function(options, container){
 		charts[o.type].setup();
 		
 		//clean up some doubled lines that sit on top of canvas borders (done via JS due to IE)
-		if(!o.lineMargin) {
-			// $('.visualize-line li:first-child span.line, .visualize-line li:last-child span.line, .visualize-area li:first-child span.line, .visualize-area li:last-child span.line, .visualize-bar li:first-child span.line,.visualize-bar .visualize-labels-y li:last-child span.line').css('border','none');
+		if(o.lineMargin < 3) {
+			$('li:first-child span.line, li:last-child span.line',canvasContain).css('border','none');
 		}
 		
 		
