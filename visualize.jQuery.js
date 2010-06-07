@@ -187,27 +187,25 @@ $.fn.visualize = function(options, container){
 			tableData.totalXRange = totalXRange;
 		}
 		
+		var	yScale = tableData.yScale = (o.height - 2*o.lineMargin) / totalYRange;
+		var zeroLocY = tableData.zeroLocY = (o.height-2*o.lineMargin) * (tableData.topValue/tableData.totalYRange) + o.lineMargin;
+		
 		var yLabels = tableData.yLabels = [];
 
 		var numLabels = Math.floor((o.height - 2*o.lineMargin) / 30);
 		var loopInterval = tableData.totalYRange / numLabels; //fix provided from lab
+		loopInterval = Math.round(parseFloat(loopInterval)/5)*5;
 		loopInterval = Math.max(loopInterval, 1);
-		for(var j=tableData.bottomValue; j<=tableData.topValue; j+=loopInterval){
+		// var start = 
+		for(var j=Math.round(parseInt(tableData.bottomValue)/5)*5; j<=tableData.topValue+loopInterval; j+=loopInterval){
 			yLabels.push(j); 
 		}
-		if(yLabels[yLabels.length-1] > tableData.topValue) {
+		if(yLabels[yLabels.length-1] > tableData.topValue+loopInterval) {
 			yLabels.pop();
 		} else if (yLabels[yLabels.length-1] <= tableData.topValue-10) {
 			yLabels.push(tableData.topValue);
 		}
 				
-		var	yScale = tableData.yScale = (o.height - 2*o.lineMargin) / totalYRange;
-		var marginDiff = 0;
-		if(o.lineMargin) {
-			var marginDiff = -yScale-o.lineMargin;
-		}
-		var zeroLocY = tableData.zeroLocY = (o.height-2*o.lineMargin) * (tableData.topValue/tableData.totalYRange) + o.lineMargin;
-		
 		// populate some data
 		$.each(dataGroups,function(i,row){
 			row.yLabels = tableData.yAllLabels[i];
@@ -360,11 +358,18 @@ $.fn.visualize = function(options, container){
 						.insertBefore(canvas);
 
 					$.each(yLabels, function(i){
-						var value = Math.round(this);
+						var value = Math.floor(this);
+						var posB = (value-bottomValue)*yScale + o.lineMargin;
+						if(posB >= o.height-1 || posB < 0) {
+							return;
+						}
 						var thisLi = $('<li><span>'+value+'</span></li>')
-							.prepend('<span class="line"  />')
-							.css('bottom', (value-bottomValue)*yScale + o.lineMargin)
-							.prependTo(ylabelsUL);
+							.css('bottom', posB);
+						if(Math.abs(posB) < o.height-1) {
+							thisLi.prepend('<span class="line"  />');
+						}
+						thisLi.prependTo(ylabelsUL);
+						
 						var label = thisLi.find('span:not(.line)');
 						var topOffset = label.height()/-2;
 						if(!o.lineMargin) {
@@ -746,12 +751,6 @@ $.fn.visualize = function(options, container){
 
 		//create chart
 		charts[o.type].setup();
-		
-		//clean up some doubled lines that sit on top of canvas borders (done via JS due to IE)
-		if(o.lineMargin < 3) {
-			$('li:first-child span.line, li:last-child span.line',canvasContain).css('border','none');
-		}
-		
 		
 		if(!container){
 			//add event for updating
