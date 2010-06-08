@@ -44,12 +44,17 @@
 					lineDots: 'double',
 					width: 600,
 					interaction: true,
+					multiHover: 15,
 					chartId: 'us-chart2',
 					tooltip: true,
 					tooltiphtml: function(data) {
-						return '<p style="font-weight:bold;color:'+data.point.color+';"><big>'+data.point.value+'%</big> - '+data.point.yLabels[0]+'</p>'+
-							'<p>Date:'+data.point.xLabels[0]+'</p>'+
-							'<p>Error margin: '+data.point.xLabels[1]+'</p>';
+						var html ='';
+						for(var i=0;i<data.point.length;i++){
+							html += '<p style="font-weight:bold;color:'+data.point[i].color+';"><big>'+data.point[i].value+'%</big> - '+data.point[i].yLabels[0]+'</p>';
+						}
+						html += '<p>Date:'+data.point[0].xLabels[0]+'</p>'+
+							'<p>Error margin: '+data.point[0].xLabels[1]+'</p>';
+						return html;
 					}
 				});
 				

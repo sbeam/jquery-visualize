@@ -273,8 +273,8 @@ $.fn.visualize = function(options, container){
 
 						// interaction variables
 						row.canvasCords = [labelx,labely];
-						row.zeroLocY = 0; // related to zeroLocY and plugin API
-						row.zeroLocX = 0; // related to zeroLocY and plugin API
+						row.zeroLocY = tableData.zeroLocY = 0; // related to zeroLocY and plugin API
+						row.zeroLocX = tableData.zeroLocX = 0; // related to zeroLocX and plugin API
 						row.value = row.groupTotal;
 
 
@@ -711,6 +711,21 @@ $.fn.visualize = function(options, container){
 						minDist = dist;
 					}
 				});
+				
+				if(o.multiHover && found) {
+					x = found.canvasCords[0] + zeroLocX;
+					y = found.canvasCords[1] + (o.type=="pie"?0:zeroLocY);
+					found = [found];
+					$.each(charts[o.type].interactionPoints,function(i,current){
+						if(current == found[0]) {return;}
+						x1 = current.canvasCords[0] + zeroLocX;
+						y1 = current.canvasCords[1] + (o.type=="pie"?0:zeroLocY);
+						dist = Math.sqrt( (x1 - x)*(x1 - x) + (y1 - y)*(y1 - y) );
+						if(dist <= o.multiHover) {
+							found.push(current);
+						}
+					});
+				}
 				// trigger over and out only when state changes, instead of on every mousemove
 				over = found;
 				if(over != last) {

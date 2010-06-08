@@ -20,7 +20,15 @@
 			tooltipvalign: 'top',
 			tooltipclass: 'visualize-tooltip',
 			tooltiphtml: function(data){
-				return '<p>'+data.point.value+' - '+data.point.yLabels[0]+'</p>'
+				if(options.multiHover) {
+					var html='';
+					for(var i=0;i<data.point.length;i++){
+						html += '<p>'+data.point[i].value+' - '+data.point[i].yLabels[0]+'</p>';
+					}
+					return html;					
+				} else {
+					return '<p>'+data.point.value+' - '+data.point.yLabels[0]+'</p>';
+				}
 			},
 			delay:false
 		},options);
@@ -51,7 +59,12 @@
 		
 		self.bind('vizualizeOver',function visualizeTooltipOver(e,data){
 			if(data.canvasContain.get(0) != canvasContain.get(0)) {return;} // for multiple graphs originated from same table
-			var left,right,top,clasRem,clasAd,bottom,x=Math.round(data.point.canvasCords[0]+data.point.zeroLocX),y=Math.round(data.point.canvasCords[1]+data.point.zeroLocY);
+			if(o.multiHover) {
+				var p = data.point[0].canvasCords;
+			} else {
+				var p = data.point.canvasCords;
+			}
+			var left,right,top,clasRem,clasAd,bottom,x=Math.round(p[0]+data.tableData.zeroLocX),y=Math.round(p[1]+data.tableData.zeroLocY);
 			if(o.tooltipalign == 'left' || ( o.tooltipalign=='auto' && x<=o.width/2 ) ) {
 				left = x+'px';
 				right = '';
