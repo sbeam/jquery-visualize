@@ -719,7 +719,7 @@ $.fn.visualize = function(options, container){
 					$.each(charts[o.type].interactionPoints,function(i,current){
 						if(current == found[0]) {return;}
 						x1 = current.canvasCords[0] + zeroLocX;
-						y1 = current.canvasCords[1] + (o.type=="pie"?0:zeroLocY);
+						y1 = current.canvasCords[1] + zeroLocY;
 						dist = Math.sqrt( (x1 - x)*(x1 - x) + (y1 - y)*(y1 - y) );
 						if(dist <= o.multiHover) {
 							found.push(current);
