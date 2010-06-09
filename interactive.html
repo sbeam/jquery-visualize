@@ -106,9 +106,15 @@
 			});
 		</script>
 		<style type="text/css" media="screen">
-			table#us {display:none}
-			#us-chart .visualize-labels-x,
+			#us2 td, #us2 th {font-size:10px;padding:1px;}
+			table#us {display:none;}
 			#us-chart2 .visualize-labels-x  {display:none} /*hide this charts xLabels since they superpose each other */
+			#us-chart .visualize-scroller {margin-bottom:50px;}
+			#us-chart canvas {float:left;position:relative;}
+			#us-chart,
+			#us-chart .visualize-labels-y {width:700px !important;}
+			#us-chart .visualize-labels-x {display:none;}
+			#us-chart .visualize-scroller {width:700px;height:350px;overflow-x:auto;}
 		</style>
 	</head>
 	<body>
@@ -178,24 +184,24 @@
 	<thead>
 	<tr>
 		<td>date</td>
-		<th>01/30/2007</th>
-		<th>02/01/2007</th>
-		<th>03/01/2007</th>
-		<th>04/01/2007</th>
-		<th>05/01/2007</th>
-		<th>06/01/2007</th>
-		<th>07/01/2007</th>
-		<th>08/01/2007</th>
-		<th>09/01/2007</th>
-		<th>10/01/2007</th>
-		<th>11/01/2007</th>
-		<th>12/01/2007</th>
-		<th>01/01/2008</th>
-		<th>02/01/2008</th>
-		<th>03/01/2008</th>
-		<th>04/01/2008</th>
-		<th>05/01/2008</th>
-		<th>06/01/2008</th>
+		<th>01 / 30 / 2007</th>
+		<th>02 / 01 / 2007</th>
+		<th>03 / 01 / 2007</th>
+		<th>04 / 01 / 2007</th>
+		<th>05 / 01 / 2007</th>
+		<th>06 / 01 / 2007</th>
+		<th>07 / 01 / 2007</th>
+		<th>08 / 01 / 2007</th>
+		<th>09 / 01 / 2007</th>
+		<th>10 / 01 / 2007</th>
+		<th>11 / 01 / 2007</th>
+		<th>12 / 01 / 2007</th>
+		<th>01 / 01 / 2008</th>
+		<th>02 / 01 / 2008</th>
+		<th>03 / 01 / 2008</th>
+		<th>04 / 01 / 2008</th>
+		<th>05 / 01 / 2008</th>
+		<th>06 / 01 / 2008</th>
 	</tr>
 	<tr>
 		<td>Error margin</td>

@@ -355,7 +355,7 @@ $.fn.visualize = function(options, container){
 						.width(canvas.width())
 						.height(canvas.height())
 						// .css('margin-top',-o.lineMargin)
-						.insertBefore(canvas);
+						.insertBefore(scroller);
 
 					$.each(yLabels, function(i){
 						var value = Math.floor(this);
@@ -644,7 +644,10 @@ $.fn.visualize = function(options, container){
 		//create canvas wrapper div, set inline w&h, append
 		var canvasContain = (container || $('<div '+(o.chartId?'id="'+o.chartId+'" ':'')+'class="visualize '+o.chartClass+'" role="img" aria-label="Chart representing data from the table: '+ title +'" />'))
 			.height(o.height)
-			.width(o.width)
+			.width(o.width);
+		
+		var scroller = $('<div class="visualize-scroller"></div>')
+			.appendTo(canvasContain)
 			.append(canvas);
 
 		//title/key container
@@ -681,7 +684,7 @@ $.fn.visualize = function(options, container){
 					'position':'relative',
 					'z-index': 200
 				})
-				.appendTo(canvasContain);
+				.insertAfter(canvas);
 
 			var triggerInteraction = function(overOut,data) {
 				var data = $.extend({
@@ -758,6 +761,9 @@ $.fn.visualize = function(options, container){
 		
 		//set up the drawing board
 		var ctx = canvas[0].getContext('2d');
+		
+		// Scroll graphs
+		scroller.scrollLeft(o.width-scroller.width());
 
 		// init plugins
 		$.each($.visualizePlugins,function(i,plugin){

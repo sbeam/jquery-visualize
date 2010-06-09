@@ -38,24 +38,31 @@
 		
 		var self = $(this),
 			canvasContain = self.next(),
+			scroller = canvasContain.find('.visualize-scroller'),
+			scrollerW = scroller.width(),
 			tracker = canvasContain.find('.visualize-interaction-tracker');
 		
 		// IE needs background color and opacity white or the tracker stays behind the tooltip
 		tracker.css({
 			backgroundColor:'white',
 			opacity:0,
-			position:'relative',
 			zIndex:100
 		});
 		
 		var tooltip = $('<div class="'+o.tooltipclass+'"/>').css({
-			position:'absolute',
-			display:'none',
-			zIndex:90
-		});
+				position:'absolute',
+				display:'none',
+				zIndex:90
+			})
+			.insertAfter(scroller.find('canvas'));
+
+		var usescroll = true;
 		
-		// Append the tooltip to the canvas container
-		canvasContain.append(tooltip);
+		if( typeof(G_vmlCanvasManager) != 'undefined' ){
+			scroller.css({'position':'absolute'});
+			tracker.css({marginTop:'-'+(o.height)+'px'});
+		}
+		
 		
 		self.bind('vizualizeOver',function visualizeTooltipOver(e,data){
 			if(data.canvasContain.get(0) != canvasContain.get(0)) {return;} // for multiple graphs originated from same table
@@ -65,14 +72,16 @@
 				var p = data.point.canvasCords;
 			}
 			var left,right,top,clasRem,clasAd,bottom,x=Math.round(p[0]+data.tableData.zeroLocX),y=Math.round(p[1]+data.tableData.zeroLocY);
-			if(o.tooltipalign == 'left' || ( o.tooltipalign=='auto' && x<=o.width/2 ) ) {
-				left = x+'px';
+			if(o.tooltipalign == 'left' || ( o.tooltipalign=='auto' && x-scroller.scrollLeft()<=scrollerW/2 ) ) {
+				if($.browser.msie && ($.browser.version == 7 || $.browser.version == 6) ) {usescroll=false;} else {usescroll=true;}
+				left = (x-(usescroll?scroller.scrollLeft():0))+'px';
 				right = '';
 				clasAdd="tooltipleft";
 				clasRem="tooltipright";
 			} else {
+				if($.browser.msie && $.browser.version == 7) {usescroll=false;} else {usescroll=true;}
 				left = '';
-				right = Math.abs(x-o.width)+'px';
+				right = (Math.abs(x-o.width)- (o.width-(usescroll?scroller.scrollLeft():0)-scrollerW) )+'px';
 				clasAdd="tooltipright";
 				clasRem="tooltipleft";
 			}
