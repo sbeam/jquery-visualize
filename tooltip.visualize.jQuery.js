@@ -75,7 +75,7 @@
 			if(o.tooltipalign == 'left' || ( o.tooltipalign=='auto' && x-scroller.scrollLeft()<=scrollerW/2 ) ) {
 				if($.browser.msie && ($.browser.version == 7 || $.browser.version == 6) ) {usescroll=false;} else {usescroll=true;}
 				left = x-(usescroll?scroller.scrollLeft():0);
-				if(left<0) {
+				if(x-scroller.scrollLeft()<0) { // even with when not using scroll we need to calc with it for IE
 					return;
 				}
 				left = left+'px';
@@ -85,7 +85,7 @@
 			} else {
 				if($.browser.msie && $.browser.version == 7) {usescroll=false;} else {usescroll=true;}
 				right = Math.abs(x-o.width)- (o.width-(usescroll?scroller.scrollLeft():0)-scrollerW);
-				if(right<0) {
+				if(Math.abs(x-o.width)- (o.width-scroller.scrollLeft()-scrollerW)<0) { // even with when not using scroll we need to calc with it for IE
 					return;
 				}
 				left = '';
