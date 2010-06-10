@@ -74,14 +74,22 @@
 			var left,right,top,clasRem,clasAd,bottom,x=Math.round(p[0]+data.tableData.zeroLocX),y=Math.round(p[1]+data.tableData.zeroLocY);
 			if(o.tooltipalign == 'left' || ( o.tooltipalign=='auto' && x-scroller.scrollLeft()<=scrollerW/2 ) ) {
 				if($.browser.msie && ($.browser.version == 7 || $.browser.version == 6) ) {usescroll=false;} else {usescroll=true;}
-				left = (x-(usescroll?scroller.scrollLeft():0))+'px';
+				left = x-(usescroll?scroller.scrollLeft():0);
+				if(left<0) {
+					return;
+				}
+				left = left+'px';
 				right = '';
 				clasAdd="tooltipleft";
 				clasRem="tooltipright";
 			} else {
 				if($.browser.msie && $.browser.version == 7) {usescroll=false;} else {usescroll=true;}
+				right = Math.abs(x-o.width)- (o.width-(usescroll?scroller.scrollLeft():0)-scrollerW);
+				if(right<0) {
+					return;
+				}
 				left = '';
-				right = (Math.abs(x-o.width)- (o.width-(usescroll?scroller.scrollLeft():0)-scrollerW) )+'px';
+				right = right+'px';
 				clasAdd="tooltipright";
 				clasRem="tooltipleft";
 			}
