@@ -32,6 +32,7 @@ $.fn.visualize = function(options, container){
 			barGroupMargin: 10,
 			chartId: '',
 			xLabelParser: null, // function to parse labels as values
+			valueParser: null, // function to parse values. must return a Number
 			chartId: '',
 			chartClass: '',
 			barMargin: 1, //space around bars in bar chart (added to both sides of bar)
@@ -81,7 +82,7 @@ $.fn.visualize = function(options, container){
 			return labels;
 		};
 		
-		
+		var fnParse = o.valueParser || parseFloat;
 		var dataGroups = tableData.dataGroups = [];
 		if(o.parseDirection == 'x'){
 			self.find('tbody tr').each(function(i,tr){
@@ -91,7 +92,7 @@ $.fn.visualize = function(options, container){
 				if(textColors[i]){ dataGroups[i].textColor = textColors[i]; }
 				$(tr).find('td').each(function(j,td){
 					dataGroups[i].points.push( {
-						value: parseFloat($(td).text()),
+						value: fnParse($(td).text()),
 						elem: td,
 						tableCords: [i,j]
 					} );
@@ -129,12 +130,12 @@ $.fn.visualize = function(options, container){
 		tableData.topValue = 0;
 		tableData.bottomValue = Infinity;
 		$.each(allItems,function(i,item){
-			tableData.dataSum += parseFloat(item.value);
-			if(parseFloat(item.value,10)>tableData.topValue) {
-				tableData.topValue = parseFloat(item.value,10);
+			tableData.dataSum += fnParse(item.value);
+			if(fnParse(item.value,10)>tableData.topValue) {
+				tableData.topValue = fnParse(item.value,10);
 			}
 			if(item.value<tableData.bottomValue) {
-				tableData.bottomValue = parseFloat(item.value);	
+				tableData.bottomValue = fnParse(item.value);	
 			}
 		});
 		var dataSum = tableData.dataSum;
