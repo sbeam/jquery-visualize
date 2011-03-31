@@ -156,36 +156,10 @@ $.fn.visualize = function(options, container){
 		
 		if($.isFunction(o.xLabelParser)) {
 			
-			var xTopValue = null;
-			var xBottomValue = null;
-
 			$.each(xLabels,function(i,label) {
 				label = xLabels[i] = o.xLabelParser(label);
-				if(i === 0) {
-					xTopValue = label;
-					xBottomValue = label;
-				}
-				if(label>xTopValue) {
-					xTopValue = label;
-				}
-				if(label<xBottomValue) {
-					xBottomValue = label;
-				}
 			});
 
-			var totalXRange = tableData.totalXRange = xTopValue - xBottomValue;
-
-			
-			var	xScale = tableData.xScale = (o.width -2*o.lineMargin) / totalXRange;
-			var marginDiffX = 0;
-			if(o.lineMargin) {
-				var marginDiffX = -2*xScale-o.lineMargin;
-			}
-			zeroLocX = tableData.zeroLocX = xBottomValue + o.lineMargin;
-			
-			tableData.xBottomValue = xBottomValue;
-			tableData.xTopValue = xTopValue;
-			tableData.totalXRange = totalXRange;
 		}
 		
 		var	yScale = tableData.yScale = (o.height - 2*o.lineMargin) / totalYRange;
