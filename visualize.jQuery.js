@@ -384,7 +384,7 @@ $.fn.visualize = function(options, container){
 					
 					//start from the bottom left
 					ctx.translate(zeroLocX,zeroLocY);
-					
+
 					charts.line.draw(area);
 
 				},
@@ -397,11 +397,7 @@ $.fn.visualize = function(options, container){
 					$.each(dataGroups,function(i,row){
 						integer = o.lineMargin; // the current offset
 						$.each(row.points, function(j,point){
-							if(o.xLabelParser) {
-								point.canvasCords = [(xLabels[j]-zeroLocX)*xScale - xBottomValue,-(point.value*yScale)];
-							} else {
-								point.canvasCords = [integer,-(point.value*yScale)];
-							}
+							point.canvasCords = [integer,-(point.value*yScale)];
 							
 							if(o.lineDots) {
 								point.dotSize = o.dotSize||o.lineWeight*Math.PI;
