@@ -462,6 +462,7 @@ $.fn.visualize = function(options, container){
 		})();
 		
 		charts.area = {
+			interactionPoints: allItems,
 			setup: function() {
 				charts.line.setup(true);
 			},
