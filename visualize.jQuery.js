@@ -33,6 +33,7 @@ $.fn.visualize = function(options, container){
 			chartId: '',
 			xLabelParser: null, // function to parse labels as values
 			valueParser: null, // function to parse values. must return a Number
+			xLabelSkip: null,  // only display every n labels
 			chartId: '',
 			chartClass: '',
 			barMargin: 1, //space around bars in bar chart (added to both sides of bar)
@@ -146,21 +147,19 @@ $.fn.visualize = function(options, container){
 		var yAllLabels = tableData.yAllLabels = parseLabels(o.parseDirection==='x'?'y':'x');
 	
 		var xLabels = tableData.xLabels = [];
-		$.each(tableData.xAllLabels,function(i,labels) {
-			tableData.xLabels.push(labels[0]);
+
+		$.each(tableData.xAllLabels, function(i,labels) {
+			if (o.xLabelSkip && i != 0 && i != tableData.xAllLabels.length && i % o.xLabelSkip != 0) {
+				tableData.xLabels.push( '' );
+			}
+			else {
+				tableData.xLabels.push( ($.isFunction(o.xLabelParser))? o.xLabelParser(labels, i) : labels[0] );
+			}
 		});
 		
 		var totalYRange = tableData.totalYRange = tableData.topValue - tableData.bottomValue;
 		
 		var zeroLocX = tableData.zeroLocX = 0;
-		
-		if($.isFunction(o.xLabelParser)) {
-			
-			$.each(xLabels,function(i,label) {
-				label = xLabels[i] = o.xLabelParser(label);
-			});
-
-		}
 		
 		var	yScale = tableData.yScale = (o.height - 2*o.lineMargin) / totalYRange;
 		var zeroLocY = tableData.zeroLocY = (o.height-2*o.lineMargin) * (tableData.topValue/tableData.totalYRange) + o.lineMargin;
